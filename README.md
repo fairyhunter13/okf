@@ -4,10 +4,13 @@ A checker for [OKF v0.2](https://github.com/GoogleCloudPlatform/knowledge-catalo
 bundles — directories of markdown with YAML frontmatter.
 
 ```
-go install github.com/fairyhunter13/okf/cmd/okf@latest
+go install github.com/fairyhunter13/okf/cmd/okf@v0.1.0
 okf check knowledge          # conformance errors exit 1
 okf check -Werror knowledge  # warnings exit 1 too
 ```
+
+Pin the tag, don't take `@latest`: this binary decides whether a consumer's CI is
+green, and `@latest` lets that verdict change with no commit in the repo it gates.
 
 Only §11's three rules are errors: a concept needs a non-empty `type`,
 `index.md` carries no frontmatter (bar `okf_version` at the root), and `log.md`

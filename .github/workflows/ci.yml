@@ -1,0 +1,25 @@
+name: CI
+
+# Unlike the repos this tool gates, `pull_request` is safe here: hosted runners only,
+# no secrets, no self-hosted device to expose to a fork.
+on:
+  push:
+    branches: ["main"]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+
+      - run: go vet ./...
+
+      - run: go test ./...
