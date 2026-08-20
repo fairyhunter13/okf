@@ -14,8 +14,12 @@ func Main(args []string, w io.Writer, rules ...Rule) int {
 
 // MainWith is [Main] with bundle-wide rules as well.
 func MainWith(args []string, w io.Writer, rules Rules) int {
+	if len(args) > 0 && args[0] == "sweep" {
+		return sweepMain(args[1:], w)
+	}
 	if len(args) == 0 || args[0] != "check" {
 		fmt.Fprintln(w, "usage: okf check [-Werror] [bundle...]")
+		fmt.Fprintln(w, "       okf sweep [--roots dir,dir] [--memory dir] [--json]")
 		return 2
 	}
 	roots := args[1:]

@@ -46,3 +46,27 @@ okf.MainWith(os.Args[1:], os.Stderr, okf.Rules{
 Bundle findings are appended after the per-concept ones and sorted among
 themselves, so adding one never moves a line the stock check already prints —
 `TestStockCheckOutputIsByteIdentical` holds that.
+
+## Fleet sweep
+
+```
+okf sweep --roots ~/git/github.com/fairyhunter13,~/go/src/github.com/fairyhunter13
+okf sweep --roots ~/git/github.com/fairyhunter13 --memory ~/.claude/memory --json
+```
+
+Every directory under a root holding both `.git` and a `knowledge/` sibling is a
+repo, so an eleventh is picked up the day it gets a bundle and there is no
+registry to drift. Per repo it reports the check verdict, field coverage,
+expired `stale_after`, unresolved `[[memory:…]]` references, and the gates: a
+hook that runs `okf` (directly, through a symlinked script, or through `make`),
+a workflow step, and every version literal found. A hook present but not
+executable is reported as such rather than as a gate — git skips it silently.
+More than one pin is printed as drift.
+
+`--memory` is where `[[memory:…]]` resolves; unset, every such reference reports
+unresolved rather than being skipped, because the four profile homes differ and
+a verdict depending on which one ran would be no verdict.
+
+Sweep exits 0 on findings. It is a report, not a gate: a red not attached to a
+change is the accumulating advisory the severity split exists to avoid. Exit 1
+means the sweep itself did not run.
