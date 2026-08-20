@@ -20,8 +20,16 @@ var (
 // CheckBundle walks a bundle root and reports conformance errors (§11) and
 // advisory warnings, plus whatever the caller's rules report.
 func CheckBundle(root string, today time.Time, rules ...Rule) ([]Finding, error) {
+	return CheckBundleWith(root, today, Rules{Doc: rules})
+}
+
+// CheckBundleWith is [CheckBundle] with bundle-wide rules as well. Their
+// findings are appended after the per-concept ones and sorted among themselves,
+// so adding one cannot move a line the stock check already prints.
+func CheckBundleWith(root string, today time.Time, rules Rules) ([]Finding, error) {
 	var out []Finding
 	var concepts []string
+	bundle := Bundle{Root: root}
 	linked := map[string]bool{}
 	err := filepath.WalkDir(root, func(p string, d fs.DirEntry, err error) error {
 		if err != nil || d.IsDir() || filepath.Ext(p) != ".md" {
@@ -32,12 +40,13 @@ func CheckBundle(root string, today time.Time, rules ...Rule) ([]Finding, error)
 			return err
 		}
 		rel := filepath.ToSlash(mustRel(root, p))
-		out = append(out, checkFile(root, rel, string(b), today, rules)...)
+		out = append(out, checkFile(root, rel, string(b), today, rules.Doc)...)
 
-		_, body, perr := Parse(string(b))
+		fm, body, perr := Parse(string(b))
 		if perr != nil {
 			return nil
 		}
+		bundle.Docs = append(bundle.Docs, Doc{Root: root, Rel: rel, FM: fm, Body: body})
 		if !reserved(rel) {
 			concepts = append(concepts, rel)
 		}
@@ -49,7 +58,8 @@ func CheckBundle(root string, today time.Time, rules ...Rule) ([]Finding, error)
 	if err != nil {
 		return out, err
 	}
-	return append(out, orphanFindings(concepts, linked)...), nil
+	out = append(out, orphanFindings(concepts, linked)...)
+	return append(out, bundleFindings(rules.Bundle, bundle)...), nil
 }
 
 func reserved(rel string) bool {

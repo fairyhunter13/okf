@@ -32,3 +32,17 @@ findings, err := okf.CheckBundle("knowledge", time.Now().UTC(), myRule)
 
 Rules run on concepts only, never on `index.md` or `log.md`. To ship them in
 the CLI, call `okf.Main(os.Args[1:], os.Stderr, myRule)` from a local `main`.
+
+An invariant over the reserved files, the link graph, or any two concepts at
+once needs the whole bundle, which is what `BundleRule` is for:
+
+```go
+okf.MainWith(os.Args[1:], os.Stderr, okf.Rules{
+	Doc:    []okf.Rule{myRule},
+	Bundle: []okf.BundleRule{myBundleRule},
+})
+```
+
+Bundle findings are appended after the per-concept ones and sorted among
+themselves, so adding one never moves a line the stock check already prints —
+`TestStockCheckOutputIsByteIdentical` holds that.

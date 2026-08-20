@@ -9,6 +9,11 @@ import (
 // Main runs the `okf check` CLI and returns the process exit code. A repo with
 // its own rules wires them in here rather than forking the command.
 func Main(args []string, w io.Writer, rules ...Rule) int {
+	return MainWith(args, w, Rules{Doc: rules})
+}
+
+// MainWith is [Main] with bundle-wide rules as well.
+func MainWith(args []string, w io.Writer, rules Rules) int {
 	if len(args) == 0 || args[0] != "check" {
 		fmt.Fprintln(w, "usage: okf check [-Werror] [bundle...]")
 		return 2
@@ -25,7 +30,7 @@ func Main(args []string, w io.Writer, rules ...Rule) int {
 	today := time.Now().UTC()
 	var errs, warns int
 	for _, root := range roots {
-		findings, err := CheckBundle(root, today, rules...)
+		findings, err := CheckBundleWith(root, today, rules)
 		if err != nil {
 			fmt.Fprintf(w, "okf: %v\n", err)
 			return 2
