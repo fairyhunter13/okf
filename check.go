@@ -47,7 +47,7 @@ func CheckBundleWith(root string, today time.Time, rules Rules) ([]Finding, erro
 			return nil
 		}
 		bundle.Docs = append(bundle.Docs, Doc{Root: root, Rel: rel, FM: fm, Body: body})
-		if !reserved(rel) {
+		if !Reserved(rel) {
 			concepts = append(concepts, rel)
 		}
 		for _, l := range bundleLinks(rel, body) {
@@ -62,7 +62,9 @@ func CheckBundleWith(root string, today time.Time, rules Rules) ([]Finding, erro
 	return append(out, bundleFindings(rules.Bundle, bundle)...), nil
 }
 
-func reserved(rel string) bool {
+// Reserved reports whether a bundle-relative path is one of OKF's two reserved
+// names. A [Rule] never sees these; a [BundleRule] does, and has to say so.
+func Reserved(rel string) bool {
 	b := path.Base(rel)
 	return b == "index.md" || b == "log.md"
 }

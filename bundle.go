@@ -23,7 +23,7 @@ type Rules struct {
 func (b Bundle) Concepts() []Doc {
 	var out []Doc
 	for _, d := range b.Docs {
-		if !reserved(d.Rel) {
+		if !Reserved(d.Rel) {
 			out = append(out, d)
 		}
 	}

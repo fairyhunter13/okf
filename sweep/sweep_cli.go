@@ -1,4 +1,4 @@
-package okf
+package sweep
 
 import (
 	"flag"
@@ -9,10 +9,10 @@ import (
 	"time"
 )
 
-// sweep never fails a build: it is typed, or looped, and a red not attached to
+// Main runs the `okf sweep` CLI. It never fails a build: it is typed, or looped, and a red not attached to
 // a change is the accumulating-advisory failure the severity split exists to
 // avoid. Exit 1 is reserved for the sweep itself not running.
-func sweepMain(args []string, w io.Writer) int {
+func Main(args []string, w io.Writer) int {
 	fs := flag.NewFlagSet("sweep", flag.ContinueOnError)
 	fs.SetOutput(w)
 	roots := fs.String("roots", "", "comma-separated directories to scan for repos")

@@ -1,4 +1,4 @@
-package okf
+package sweep
 
 import (
 	"os"
@@ -16,6 +16,11 @@ import (
 var (
 	pinRe    = regexp.MustCompile(`github\.com/fairyhunter13/(okfrules|okf)(?:/cmd/\w+)?@(v[\w.+-]+|latest)`)
 	modPinRe = regexp.MustCompile(`github\.com/fairyhunter13/(okfrules|okf)\s+(v[\w.+-]+)`)
+	// Which binary the gate invokes, which is not which module it pins: this
+	// repo's gate runs scripts/okfcheck, and okfcheck is nobody's module.
+	// Lowercase only -- $OKF_PROBE and OKF_BINARY are variable names, not
+	// invocations. Longest alternative first, as above.
+	checkerRe = regexp.MustCompile(`\b(okfrules|okfcheck|okf)\b`)
 )
 
 // Where a gate can live. A repo hook only fires where core.hooksPath points at
@@ -28,8 +33,9 @@ var gatePaths = []string{
 // gates names every place this repo runs okf, and every version literal it
 // pins. A hook that exists but is not executable is reported as disarmed rather
 // than as a gate: git skips it without a word.
-func gates(repo string) (found []string, pins []string) {
+func gates(repo string) (found []string, pins []string, checkers []string) {
 	seen := map[string]bool{}
+	seenChecker := map[string]bool{}
 	add := func(m []string) {
 		pin := m[1] + "@" + m[2]
 		if !seen[pin] {
@@ -41,6 +47,12 @@ func gates(repo string) (found []string, pins []string) {
 		found = append(found, label)
 		for _, m := range pinRe.FindAllStringSubmatch(text, -1) {
 			add(m)
+		}
+		for _, m := range checkerRe.FindAllStringSubmatch(text, -1) {
+			if !seenChecker[m[1]] {
+				seenChecker[m[1]] = true
+				checkers = append(checkers, m[1])
+			}
 		}
 	}
 
@@ -87,7 +99,21 @@ func gates(repo string) (found []string, pins []string) {
 	}
 
 	sort.Strings(pins)
-	return found, pins
+	// okfrules and okfcheck each embed okf, so where a gate names one of them
+	// the bare token is a substring or a variable, not a second checker: ccw's
+	// hook binds `okf = shutil.which(OKF_BINARY)` and would otherwise be
+	// reported as running the one checker it does not.
+	if len(checkers) > 1 {
+		var kept []string
+		for _, c := range checkers {
+			if c != "okf" {
+				kept = append(kept, c)
+			}
+		}
+		checkers = kept
+	}
+	sort.Strings(checkers)
+	return found, pins, checkers
 }
 
 // A repo whose gate is `go run .` pins okf in go.mod rather than in a version

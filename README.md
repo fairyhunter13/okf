@@ -4,7 +4,7 @@ A checker for [OKF v0.2](https://github.com/GoogleCloudPlatform/knowledge-catalo
 bundles — directories of markdown with YAML frontmatter.
 
 ```
-go install github.com/fairyhunter13/okf/cmd/okf@v0.2.0
+go install github.com/fairyhunter13/okf/cmd/okf@v0.3.0
 okf check knowledge          # conformance errors exit 1
 okf check -Werror knowledge  # warnings exit 1 too
 ```
@@ -21,6 +21,21 @@ them, and `TestSeverityNeverEscalates` keeps it that way.
 Conformance is pinned to Google's four reference bundles in `testdata/google/`
 rather than to a reading of the spec: whatever the checker rejects there is a
 bug in the checker.
+
+## Packages
+
+| Package | Holds |
+|---|---|
+| `okf` | the engine: §11 conformance, `Parse`, `CheckBundle`, `Rule`/`BundleRule` |
+| `okf/rules` | the fleet's own invariants, which §11 forbids the engine to enforce |
+| `okf/sweep` | the fleet report, which imports both |
+
+`rules` is a package and not part of `okf` so that importing the engine gets a
+conformant checker and nothing this fleet decided. It was module
+`github.com/fairyhunter13/okfrules` until v0.3.0; that split bought the same
+separation at the price of two pins and a sweep that could not reach the rules,
+because they imported it. Pins at `okfrules@v0.2.1` and earlier keep resolving
+through the module proxy.
 
 ## Repo-local rules
 
@@ -47,6 +62,35 @@ Bundle findings are appended after the per-concept ones and sorted among
 themselves, so adding one never moves a line the stock check already prints —
 `TestStockCheckOutputIsByteIdentical` holds that.
 
+## The fleet rules
+
+```
+go install github.com/fairyhunter13/okf/cmd/okfrules@v0.3.0
+okfrules check -Werror knowledge
+okfrules -strict check -Werror knowledge
+```
+
+| Rule | Refuses |
+|---|---|
+| `ResourceResolves` | a `resource:` naming a path that is gone |
+| `TypeVocabulary` | a `type` outside the skills' table |
+| `VerifiedWellFormed` | a `verified:` stamp not naming a `human:`, or older than `generated.at` |
+| `StaleAfterHasAReason` | a `stale_after` with no `sources:` naming what expires |
+| `IndexHeadingsAreSingularTypes` | `## Decisions` where the table says `Decision` |
+| `LogFrontmatter` | a `log.md` missing `type: Log` or its `title` |
+| `NoIntraBundleWikilinks` | `[[name]]` inside a bundle — link with markdown, or name the home |
+| `LogVerbs` | a log entry led by something outside the five verbs |
+
+`Standard()` is the first seven and everything they report is an error, not the
+spec's advisory half: each says a concept describes something that is not there,
+or is filed where nothing will find it. `Strict()` adds `LogVerbs`, which is
+opt-in on a measurement — 2026-08-21, 84 offending entries across the three
+bundles that fired, 57 ordinary drift since renamed, and 26 left in two bundles:
+13 sentences and 13 labels the five verbs have no word for (`Refused`,
+`Refutation`, `Not changed`). Rewriting dated history to fit a closed vocabulary
+falsifies it. The third bundle adopted `Strict()` the day its one drift entry
+was renamed, which is what tells this apart from staging.
+
 ## Fleet sweep
 
 ```
@@ -56,7 +100,10 @@ okf sweep --roots ~/git/github.com/fairyhunter13 --memory ~/.claude/memory --jso
 
 Every directory under a root holding both `.git` and a `knowledge/` sibling is a
 repo, so an eleventh is picked up the day it gets a bundle and there is no
-registry to drift. Per repo it reports the check verdict, field coverage,
+registry to drift. The verdict is `okf` plus `rules.Standard()` — until v0.3.0
+it was §11 alone, because the rules were a module importing this one. A repo's
+strict or local rules still run only in its own gate, which is why every line
+names the checker that repo invokes. Per repo it reports the check verdict, field coverage,
 expired `stale_after`, unresolved `[[memory:…]]` references, and the gates: a
 hook that runs `okf` (directly, through a symlinked script, or through `make`),
 a workflow step, and every version literal found. A hook present but not

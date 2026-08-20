@@ -1,0 +1,75 @@
+// Package rules holds the invariants every bundle in this fleet keeps but the
+// OKF spec deliberately does not: §11 forbids rejecting a bundle over an unknown
+// type, a missing key or a broken link, so a local vocabulary is only a rule
+// while something asserts it. Two bundles drifted before anything did.
+//
+// It is a package and not the parent so that the parent stays conformant: a
+// consumer importing okf gets nothing this package decides.
+package rules
+
+import (
+	"regexp"
+	"strings"
+
+	"github.com/fairyhunter13/okf"
+)
+
+// The vocabularies the okf-knowledge-bundle and okf-bootstrap skills tabulate.
+var (
+	DefaultTypes = []string{
+		"Decision", "Component", "Interface", "Constraint", "Policy", "Runbook",
+		"Skill", "Glossary Term", "Attested Computation", "Scenario", "Defect",
+	}
+	DefaultLogVerbs = []string{"Creation", "Update", "Deprecation", "Remove", "Verified"}
+)
+
+// Standard is what a bundle can adopt today without a bulk edit first. Measured
+// over all ten fleet bundles, these fire twice in total, and both are real.
+// A repo with a local rule appends to the returned lists rather than rebuilding
+// them.
+func Standard() okf.Rules {
+	return okf.Rules{
+		Doc: []okf.Rule{
+			ResourceResolves,
+			TypeVocabulary(DefaultTypes),
+			VerifiedWellFormed,
+			StaleAfterHasAReason,
+		},
+		Bundle: []okf.BundleRule{
+			IndexHeadingsAreSingularTypes(DefaultTypes),
+			LogFrontmatter,
+			// Standard since v0.2.1: the conversion it was waiting on finished,
+			// and all ten bundles measured zero. Held back here, it would have
+			// been enforced in the two repos that build their own checker and
+			// nowhere else, which is the half of the fleet least likely to drift.
+			NoIntraBundleWikilinks,
+		},
+	}
+}
+
+// Strict adds the one rule two bundles cannot take. Measured 2026-08-21: of 84
+// offending entries, 57 were ordinary drift and were renamed; the 26 left are
+// 13 sentences and 13 labels — Refused, Refutation, Not changed — the five
+// verbs have no word for, and rewriting dated history to fit falsifies it. So
+// it stays opt-in, over 26 entries in two bundles rather than 84 in three; the
+// third adopted Strict once its one drift entry was renamed.
+func Strict() okf.Rules {
+	r := Standard()
+	r.Bundle = append(r.Bundle, LogVerbs(DefaultLogVerbs))
+	return r
+}
+
+func errf(msg string) []okf.Finding { return []okf.Finding{{Sev: okf.Error, Msg: msg}} }
+
+func at(path, msg string) okf.Finding { return okf.Finding{Path: path, Sev: okf.Error, Msg: msg} }
+
+var codeRe = regexp.MustCompile("(?s)```.*?```|`[^`\n]*`")
+
+// A rule reading prose reads the prose only: a fenced example of the thing it
+// forbids is documentation, not a violation.
+func stripCode(s string) string { return codeRe.ReplaceAllString(s, "") }
+
+func str(v any) (string, bool) {
+	s, ok := v.(string)
+	return strings.TrimSpace(s), ok
+}

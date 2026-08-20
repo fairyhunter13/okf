@@ -7,19 +7,17 @@ import (
 )
 
 // Main runs the `okf check` CLI and returns the process exit code. A repo with
-// its own rules wires them in here rather than forking the command.
+// its own rules wires them in here rather than forking the command. `sweep` is
+// dispatched by cmd/okf instead: it runs the fleet rules, which import this
+// package, so the engine cannot reach them.
 func Main(args []string, w io.Writer, rules ...Rule) int {
 	return MainWith(args, w, Rules{Doc: rules})
 }
 
 // MainWith is [Main] with bundle-wide rules as well.
 func MainWith(args []string, w io.Writer, rules Rules) int {
-	if len(args) > 0 && args[0] == "sweep" {
-		return sweepMain(args[1:], w)
-	}
 	if len(args) == 0 || args[0] != "check" {
 		fmt.Fprintln(w, "usage: okf check [-Werror] [bundle...]")
-		fmt.Fprintln(w, "       okf sweep [--roots dir,dir] [--memory dir] [--json]")
 		return 2
 	}
 	roots := args[1:]
