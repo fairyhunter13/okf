@@ -1,0 +1,8 @@
+testdata/regress/decisions/linked.md: warning: stale since 2020-01-01: re-verify or update stale_after
+testdata/regress/decisions/linked.md: warning: link target not in bundle: gone.md
+testdata/regress/decisions/linked.md: warning: bundle-absolute link /decisions/linked.md breaks GitHub rendering: use a relative path
+testdata/regress/decisions/typeless.md: error: frontmatter has no non-empty `type`
+testdata/regress/log.md: error: log.md date heading "Whenever" is not YYYY-MM-DD
+testdata/regress/policies/orphan.md: warning: orphan: no index entry or concept links here
+okf: 2 conformance error(s)
+exit: 1

@@ -1,0 +1,10 @@
+testdata/google/acme_retail/policies/margin-standard.md: warning: bundle-absolute link /metrics/gross-margin.md breaks GitHub rendering: use a relative path
+testdata/google/acme_retail/policies/margin-standard.md: warning: bundle-absolute link /metrics/gross-margin-legacy.md breaks GitHub rendering: use a relative path
+testdata/google/acme_retail/policies/margin-standard.md: warning: bundle-absolute link /computations/gross-margin-period.md breaks GitHub rendering: use a relative path
+testdata/google/acme_retail/policies/revenue-recognition.md: warning: bundle-absolute link /tables/orders.md breaks GitHub rendering: use a relative path
+testdata/google/acme_retail/policies/revenue-recognition.md: warning: bundle-absolute link /metrics/revenue.md breaks GitHub rendering: use a relative path
+testdata/google/acme_retail/policies/revenue-recognition.md: warning: bundle-absolute link /metrics/gross-margin.md breaks GitHub rendering: use a relative path
+testdata/google/acme_retail/policies/revenue-recognition.md: warning: bundle-absolute link /computations/revenue-ytd.md breaks GitHub rendering: use a relative path
+testdata/google/acme_retail/policies/revenue-recognition.md: warning: bundle-absolute link /computations/gross-margin-period.md breaks GitHub rendering: use a relative path
+okf: 8 warning(s), -Werror
+exit: 1
