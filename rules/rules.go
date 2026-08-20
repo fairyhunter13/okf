@@ -37,6 +37,13 @@ func Standard() okf.Rules {
 			TypeVocabulary(DefaultTypes),
 			VerifiedWellFormed,
 			StaleAfterHasAReason,
+			// Standard since v0.4.1. At v0.4.0 these four fired on 172, 31, 27 and
+			// 3 fleet concepts and waited in Strict; the conversion finished and
+			// all ten bundles measure zero, which is the promotion condition.
+			ActorConvention,
+			StatusVocabulary,
+			FootnoteLabelsJoinSources,
+			AttestedComputationHasContract,
 		},
 		Bundle: []okf.BundleRule{
 			IndexHeadingsAreSingularTypes(DefaultTypes),
@@ -56,12 +63,8 @@ func Standard() okf.Rules {
 // Strict adds the rules a bundle has to be converted into first. Of LogVerbs'
 // 84 offending entries, 57 were drift and were renamed; the 26 left are labels
 // the five verbs have no word for, and rewriting dated history falsifies it.
-// The four v0.4.0 spec rules are here for the same reason — at the tag they
-// fired on 172, 31, 27 and 3 fleet concepts — and move to Standard once the
-// fleet measures clean.
 func Strict() okf.Rules {
 	r := Standard()
-	r.Doc = append(r.Doc, ActorConvention, StatusVocabulary, FootnoteLabelsJoinSources, AttestedComputationHasContract)
 	r.Bundle = append(r.Bundle, LogVerbs(DefaultLogVerbs))
 	return r
 }

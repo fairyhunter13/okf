@@ -4,7 +4,7 @@ A checker for [OKF v0.2](https://github.com/GoogleCloudPlatform/knowledge-catalo
 bundles — directories of markdown with YAML frontmatter.
 
 ```
-go install github.com/fairyhunter13/okf/cmd/okf@v0.4.0
+go install github.com/fairyhunter13/okf/cmd/okf@v0.4.1
 okf check knowledge          # conformance errors exit 1
 okf check -Werror knowledge  # warnings exit 1 too
 ```
@@ -65,7 +65,7 @@ themselves, so adding one never moves a line the stock check already prints —
 ## The fleet rules
 
 ```
-go install github.com/fairyhunter13/okf/cmd/okfrules@v0.4.0
+go install github.com/fairyhunter13/okf/cmd/okfrules@v0.4.1
 okfrules check -Werror knowledge
 okfrules -strict check -Werror knowledge
 ```
@@ -86,21 +86,23 @@ okfrules -strict check -Werror knowledge
 | `AttestedComputationHasContract` | an `Attested Computation` with no `runtime`, or with no readable computation |
 | `LogVerbs` | a log entry led by something outside the five verbs |
 
-`Standard()` is the first eight, and all but `PreferRelativeLinks` are errors
-rather than the spec's advisory half: each says a concept describes something
-that is not there, or is filed where nothing will find it. `PreferRelativeLinks`
-was an engine warning until v0.4.0; §6.1 only recommends a shape, so the engine
-had no business holding the opinion, and moving it is why the four reference
-bundles now exit 0 under `-Werror`.
+`Standard()` is everything but `LogVerbs`, and all but `PreferRelativeLinks` are
+errors rather than the spec's advisory half: each says a concept describes
+something that is not there, or is filed where nothing will find it.
+`PreferRelativeLinks` was an engine warning until v0.4.0; §6.1 only recommends a
+shape, so the engine had no business holding the opinion, and moving it is why
+the four reference bundles now exit 0 under `-Werror`.
 
-`Strict()` adds the five a bundle has to be converted into first. `LogVerbs` is
-opt-in on a measurement — 2026-08-21, 84 offending entries across the three
-bundles that fired, 57 ordinary drift since renamed, and 26 left in two bundles:
-13 sentences and 13 labels the five verbs have no word for (`Refused`,
-`Refutation`, `Not changed`). Rewriting dated history to fit a closed vocabulary
-falsifies it. The four spec rules added in v0.4.0 are here for the same reason
-and not as staging: at the tag they fired on 146, 32, 27 and 4 fleet concepts,
-and they move to `Standard()` once the fleet measures clean.
+The four spec rules arrived in v0.4.0 firing on 172, 31, 27 and 3 fleet
+concepts, waited one tag in `Strict()` while that was converted, and are
+`Standard()` from v0.4.1 with all ten bundles measuring zero. That is the
+promotion condition, and it is the same one `NoIntraBundleWikilinks` met.
+
+`Strict()` adds `LogVerbs` alone, opt-in on a measurement — 2026-08-21, 84
+offending entries across the three bundles that fired, 57 ordinary drift since
+renamed, and 26 left in two bundles: 13 sentences and 13 labels the five verbs
+have no word for (`Refused`, `Refutation`, `Not changed`). Rewriting dated
+history to fit a closed vocabulary falsifies it.
 
 ## Fleet sweep
 
