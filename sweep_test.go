@@ -70,6 +70,12 @@ func fleet(t *testing.T) string {
 		"scripts/okfcheck/go.mod": "module x\n\nrequire github.com/fairyhunter13/okf v0.2.0\n",
 	}, map[string]bool{".githooks/pre-push": true})
 
+	repo("commentedout", map[string]string{
+		".git/HEAD": "ref: refs/heads/main\n", "knowledge/index.md": index,
+		"knowledge/decisions/d.md": concept,
+		".githooks/pre-push":       "#!/bin/sh\n# okfrules check -Werror knowledge\nexit 0\n",
+	}, map[string]bool{".githooks/pre-push": true})
+
 	repo("notarepo", map[string]string{"knowledge/index.md": index}, nil)
 	return root
 }
@@ -87,8 +93,11 @@ func TestSweepDiscoveryAndGates(t *testing.T) {
 	if _, ok := by["notarepo"]; ok {
 		t.Error("a directory with a bundle but no .git is not a repo")
 	}
-	if len(by) != 6 {
-		t.Fatalf("found %d repos, want 6: %v", len(by), by)
+	if len(by) != 7 {
+		t.Fatalf("found %d repos, want 7: %v", len(by), by)
+	}
+	if !by["commentedout"].Ungated() {
+		t.Errorf("a commented-out invocation is not a gate: %v", by["commentedout"].Gates)
 	}
 	if by["ungated"].Ungated() != true {
 		t.Error("a repo nothing checks must report ungated, not clean")

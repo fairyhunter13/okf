@@ -50,7 +50,7 @@ func gates(repo string) (found []string, pins []string) {
 		if err != nil {
 			continue
 		}
-		text := readWithTarget(p)
+		text := codeOnly(readWithTarget(p))
 		label := rel
 		if !strings.Contains(text, "okf") {
 			mk, ok := viaMake(repo, text)
@@ -68,10 +68,14 @@ func gates(repo string) (found []string, pins []string) {
 
 	for _, p := range workflowFiles(repo) {
 		b, err := os.ReadFile(p)
-		if err != nil || !strings.Contains(string(b), "okf") {
+		if err != nil {
 			continue
 		}
-		note(filepath.ToSlash(mustRel(repo, p)), string(b))
+		wf := codeOnly(string(b))
+		if !strings.Contains(wf, "okf") {
+			continue
+		}
+		note(filepath.ToSlash(mustRel(repo, p)), wf)
 	}
 
 	for _, p := range goModFiles(repo) {
@@ -124,10 +128,32 @@ func viaMake(repo, hook string) (string, bool) {
 		return "", false
 	}
 	b, err := os.ReadFile(filepath.Join(repo, "Makefile"))
-	if err != nil || !strings.Contains(string(b), "okf") {
+	if err != nil {
 		return "", false
 	}
-	return string(b), true
+	mk := codeOnly(string(b))
+	if !strings.Contains(mk, "okf") {
+		return "", false
+	}
+	return mk, true
+}
+
+// A hook whose only mention of okf is a commented-out invocation reported as a
+// gate, which is the sweep's own headline finding inverted: it named a repo
+// gated on the strength of a line the shell never reaches. Comment syntax is
+// the same `#` in sh, make, python and workflow YAML, and a line that is only a
+// comment is the whole population -- a trailing comment after real code leaves
+// the code, which is what decides.
+func codeOnly(text string) string {
+	var b strings.Builder
+	for _, line := range strings.Split(text, "\n") {
+		if strings.HasPrefix(strings.TrimSpace(line), "#") {
+			continue
+		}
+		b.WriteString(line)
+		b.WriteByte('\n')
+	}
+	return b.String()
 }
 
 func workflowFiles(repo string) []string {
