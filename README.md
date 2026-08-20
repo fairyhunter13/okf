@@ -28,12 +28,15 @@ okfrules -strict check -Werror knowledge
 | `NoIntraBundleWikilinks` | `[[name]]` inside a bundle — link with markdown, or name the home |
 | `LogVerbs` | a log entry led by something outside the four verbs |
 
-`Standard()` is the first six: measured over all ten fleet bundles they fire
-twice in total, and both are real. `Strict()` adds the last two, which need a
-conversion first — 82 wikilinks in one bundle, and two logs writing a bold
-summary where the vocabulary wants a verb. A rule that lands sixty reds on the
-commit that turns it on is a bulk edit, not a gate, so a repo takes those on the
-commit that finishes converting.
+`Standard()` is the first seven. `NoIntraBundleWikilinks` joined it in v0.2.1,
+when the conversion it was waiting on finished and all ten bundles measured
+zero; before that it would have been enforced only in the two repos that build
+their own checker, which is the half of the fleet least likely to drift.
+
+`Strict()` adds `LogVerbs` alone, and that one is opt-in for a different reason:
+two logs lead 47 entries with a sentence, and rewriting dated history to satisfy
+a closed vocabulary falsifies the record. It is not staging for a conversion
+that will happen.
 
 Everything is `okf.Error`. These are not the spec's advisory half: each one says
 a concept is describing something that is not there, or is filed where nothing

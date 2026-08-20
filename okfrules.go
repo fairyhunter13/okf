@@ -35,18 +35,22 @@ func Standard() okf.Rules {
 		Bundle: []okf.BundleRule{
 			IndexHeadingsAreSingularTypes(DefaultTypes),
 			LogFrontmatter,
+			// Standard since v0.2.1: the conversion it was waiting on finished,
+			// and all ten bundles measured zero. Held back here, it would have
+			// been enforced in the two repos that build their own checker and
+			// nowhere else, which is the half of the fleet least likely to drift.
+			NoIntraBundleWikilinks,
 		},
 	}
 }
 
-// Strict adds the two rules that demand a conversion before they can be
-// adopted: wikilinks number 82 in one bundle alone, and two logs write a bold
-// summary where the vocabulary wants a verb — roughly 60 firings between them.
-// A rule that lands 60 reds on the commit that turns it on is a bulk edit, not
-// a gate, so a repo takes these on the commit that finishes the conversion.
+// Strict adds the one rule two bundles cannot take: their logs lead 47 entries
+// with a sentence, and rewriting dated history to satisfy a closed vocabulary
+// falsifies the record. It stays opt-in for that reason rather than as a
+// staging area — a rule no bundle can ever adopt is not waiting for anything.
 func Strict() okf.Rules {
 	r := Standard()
-	r.Bundle = append(r.Bundle, NoIntraBundleWikilinks, LogVerbs(DefaultLogVerbs))
+	r.Bundle = append(r.Bundle, LogVerbs(DefaultLogVerbs))
 	return r
 }
 

@@ -164,17 +164,18 @@ func TestStandardIsQuietOnAConformantBundle(t *testing.T) {
 	}
 }
 
-// Strict is Standard plus the two conversion-gated rules, and a repo that has
-// not converted yet must still be able to take Standard.
-func TestStandardLeavesTheConversionGatedRulesOut(t *testing.T) {
+// The wikilink is Standard's since v0.2.1 and the verb is still Strict's, so a
+// bundle carrying one of each separates the two sets.
+func TestStandardTakesTheWikilinkAndLeavesTheVerb(t *testing.T) {
 	repo := write(t, map[string]string{
 		"knowledge/index.md":       "---\nokf_version: \"0.2\"\n---\n\n## Decision\n\n* [a](decisions/a.md)\n",
 		"knowledge/decisions/a.md": "---\ntype: Decision\n---\n\nsee [[a-sibling]]\n",
 		"knowledge/log.md":         "---\ntype: Log\ntitle: fixture knowledge history\n---\n\n## 2026-08-20\n\n- **Tidied** a\n",
 	})
 
-	if got := check(t, repo, Standard()); len(got) != 0 {
-		t.Errorf("Standard reported %q on an unconverted bundle", got)
+	got := check(t, repo, Standard())
+	if len(got) != 1 || !strings.Contains(got[0], "wikilink") {
+		t.Errorf("Standard reported %q, want the wikilink alone", got)
 	}
 	if got := check(t, repo, Strict()); len(got) != 2 {
 		t.Errorf("Strict reported %q, want the wikilink and the verb", got)
