@@ -126,6 +126,33 @@ func TestPinsNameTheirModule(t *testing.T) {
 	}
 }
 
+// --json existed for a pipe it could not reach: the report went to the stderr
+// the caller passed in, so `okf sweep --json 2>/dev/null` printed nothing.
+func TestTheReportGoesToStdoutAndErrorsDoNot(t *testing.T) {
+	var out, errs strings.Builder
+	sweepOut = &out
+	t.Cleanup(func() { sweepOut = os.Stdout })
+
+	if code := sweepMain([]string{"--json", "--roots", fleet(t)}, &errs); code != 0 {
+		t.Fatalf("exit %d: %s", code, errs.String())
+	}
+	if !strings.HasPrefix(strings.TrimSpace(out.String()), "[") {
+		t.Errorf("report did not reach stdout: %q", out.String())
+	}
+	if errs.Len() != 0 {
+		t.Errorf("stderr carried report output: %q", errs.String())
+	}
+
+	out.Reset()
+	errs.Reset()
+	if code := sweepMain(nil, &errs); code != 2 || errs.Len() == 0 {
+		t.Errorf("a usage error must reach stderr: exit %d, stderr %q", code, errs.String())
+	}
+	if out.Len() != 0 {
+		t.Errorf("stdout carried a usage error: %q", out.String())
+	}
+}
+
 func TestSweepReportsDriftStalenessAndMemory(t *testing.T) {
 	root := fleet(t)
 	reports, err := Sweep([]string{root}, "", refDate)

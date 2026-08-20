@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"os"
 	"strings"
 	"time"
 )
@@ -30,9 +31,14 @@ func sweepMain(args []string, w io.Writer) int {
 		fmt.Fprintf(w, "okf: %v\n", err)
 		return 1
 	}
-	writeSweep(w, reports, *asJSON)
+	writeSweep(sweepOut, reports, *asJSON)
 	return 0
 }
+
+// The report is the answer, not a diagnostic. `check` writes findings to the
+// stderr its caller hands it, and sweep inherited that writer -- which put
+// --json where `| jq` cannot reach it. Errors still go to w.
+var sweepOut io.Writer = os.Stdout
 
 func splitRoots(s string) []string {
 	var out []string
