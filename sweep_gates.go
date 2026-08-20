@@ -8,9 +8,14 @@ import (
 	"strings"
 )
 
+// A pin is module@version, not a bare version. The fleet's gates run okfrules
+// rather than okf, and `okf(?:/cmd/okf)?@` never matched that path -- which is
+// the failure this reports on other repos, happening here: pins read empty
+// everywhere and drift went undetectable. Longest alternative first, or `okf`
+// wins and the module reads as `okf` for both.
 var (
-	pinRe    = regexp.MustCompile(`github\.com/fairyhunter13/okf(?:/cmd/okf)?@(v[\w.+-]+|latest)`)
-	modPinRe = regexp.MustCompile(`github\.com/fairyhunter13/okf\s+(v[\w.+-]+)`)
+	pinRe    = regexp.MustCompile(`github\.com/fairyhunter13/(okfrules|okf)(?:/cmd/\w+)?@(v[\w.+-]+|latest)`)
+	modPinRe = regexp.MustCompile(`github\.com/fairyhunter13/(okfrules|okf)\s+(v[\w.+-]+)`)
 )
 
 // Where a gate can live. A repo hook only fires where core.hooksPath points at
@@ -25,13 +30,17 @@ var gatePaths = []string{
 // than as a gate: git skips it without a word.
 func gates(repo string) (found []string, pins []string) {
 	seen := map[string]bool{}
+	add := func(m []string) {
+		pin := m[1] + "@" + m[2]
+		if !seen[pin] {
+			seen[pin] = true
+			pins = append(pins, pin)
+		}
+	}
 	note := func(label, text string) {
 		found = append(found, label)
 		for _, m := range pinRe.FindAllStringSubmatch(text, -1) {
-			if !seen[m[1]] {
-				seen[m[1]] = true
-				pins = append(pins, m[1])
-			}
+			add(m)
 		}
 	}
 
@@ -68,10 +77,7 @@ func gates(repo string) (found []string, pins []string) {
 	for _, p := range goModFiles(repo) {
 		if b, err := os.ReadFile(p); err == nil {
 			for _, m := range modPinRe.FindAllStringSubmatch(string(b), -1) {
-				if !seen[m[1]] {
-					seen[m[1]] = true
-					pins = append(pins, m[1])
-				}
+				add(m)
 			}
 		}
 	}

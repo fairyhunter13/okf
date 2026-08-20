@@ -35,6 +35,25 @@ type RepoReport struct {
 // clean bundle, it is an unmeasured one.
 func (r RepoReport) Ungated() bool { return len(r.Gates) == 0 }
 
+// PinDrift names each module this repo pins at more than one version. Two pins
+// are not drift once a repo runs both okf and okfrules; two versions of one
+// module are, whichever files they came from.
+func (r RepoReport) PinDrift() []string {
+	byModule := map[string][]string{}
+	for _, pin := range r.Pins {
+		mod, ver, _ := strings.Cut(pin, "@")
+		byModule[mod] = append(byModule[mod], ver)
+	}
+	var out []string
+	for mod, vers := range byModule {
+		if len(vers) > 1 {
+			out = append(out, mod+": "+strings.Join(vers, ", "))
+		}
+	}
+	sort.Strings(out)
+	return out
+}
+
 var memoryRefRe = regexp.MustCompile(`\[\[memory:([^\]]+)\]\]`)
 
 var coverageFields = []string{"generated", "verified", "sources", "resource", "stale_after", "status", "tags"}
@@ -191,8 +210,8 @@ func writeSweep(w io.Writer, reports []RepoReport, asJSON bool) {
 				fmt.Fprintf(w, "    %s\n", line)
 			}
 		}
-		if len(r.Pins) > 1 {
-			fmt.Fprintf(w, "    pin drift: %s\n", strings.Join(r.Pins, ", "))
+		for _, drift := range r.PinDrift() {
+			fmt.Fprintf(w, "    pin drift: %s\n", drift)
 		}
 	}
 }
