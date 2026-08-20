@@ -9,6 +9,14 @@ only a rule while something asserts it — two bundles drifted before anything d
 okf.MainWith(os.Args[1:], os.Stderr, okfrules.Standard())
 ```
 
+A repo that is not Go installs the binary instead of building a checker:
+
+```
+go install github.com/fairyhunter13/okfrules/cmd/okfrules@v0.2.0
+okfrules check -Werror knowledge
+okfrules -strict check -Werror knowledge
+```
+
 | Rule | Refuses |
 |---|---|
 | `ResourceResolves` | a `resource:` naming a path that is gone |
