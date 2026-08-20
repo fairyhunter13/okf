@@ -48,7 +48,10 @@ func TestCheckFile(t *testing.T) {
 		{name: "stale", rel: "decisions/x.md", text: "---\ntype: Decision\nstale_after: 2026-01-01\n---\n", wantSev: Warning, wantFindings: 1},
 		{name: "fresh", rel: "decisions/x.md", text: "---\ntype: Decision\nstale_after: 2027-01-01\n---\n"},
 		{name: "broken link", rel: "decisions/x.md", text: "---\ntype: Decision\n---\n[a](nope.md)\n", wantSev: Warning, wantFindings: 1},
-		{name: "absolute link", rel: "decisions/x.md", text: "---\ntype: Decision\n---\n[a](/nope.md)\n", wantSev: Warning, wantFindings: 2},
+		// A "/" root means the bundle root, not the filesystem: the engine resolves
+		// it and reports only what dangles. Preferring the relative spelling is a
+		// producer opinion, and lives in rules.PreferRelativeLinks.
+		{name: "absolute link", rel: "decisions/x.md", text: "---\ntype: Decision\n---\n[a](/nope.md)\n", wantSev: Warning, wantFindings: 1},
 		{name: "external link", rel: "decisions/x.md", text: "---\ntype: Decision\n---\n[a](https://example.com/x.md)\n"},
 		{name: "link in code span", rel: "decisions/x.md", text: "---\ntype: Decision\n---\nwrite `[a](path)` here\n"},
 		{name: "link in fence", rel: "decisions/x.md", text: "---\ntype: Decision\n---\n```\n[a](path)\n```\n"},

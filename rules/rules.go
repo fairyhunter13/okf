@@ -19,6 +19,9 @@ var (
 	DefaultTypes = []string{
 		"Decision", "Component", "Interface", "Constraint", "Policy", "Runbook",
 		"Skill", "Glossary Term", "Attested Computation", "Scenario", "Defect",
+		// §6.3's `references/`: external material mirrored as a concept, so a
+		// bundle can cite a schema or an upstream doc by name instead of by URL.
+		"Reference",
 	}
 	DefaultLogVerbs = []string{"Creation", "Update", "Deprecation", "Remove", "Verified"}
 )
@@ -43,18 +46,22 @@ func Standard() okf.Rules {
 			// been enforced in the two repos that build their own checker and
 			// nowhere else, which is the half of the fleet least likely to drift.
 			NoIntraBundleWikilinks,
+			// Standard from the day it moved out of the engine in v0.4.0: it was
+			// enforced on every bundle before, and the fleet measures zero.
+			PreferRelativeLinks,
 		},
 	}
 }
 
-// Strict adds the one rule two bundles cannot take. Measured 2026-08-21: of 84
-// offending entries, 57 were ordinary drift and were renamed; the 26 left are
-// 13 sentences and 13 labels — Refused, Refutation, Not changed — the five
-// verbs have no word for, and rewriting dated history to fit falsifies it. So
-// it stays opt-in, over 26 entries in two bundles rather than 84 in three; the
-// third adopted Strict once its one drift entry was renamed.
+// Strict adds the rules a bundle has to be converted into first. Of LogVerbs'
+// 84 offending entries, 57 were drift and were renamed; the 26 left are labels
+// the five verbs have no word for, and rewriting dated history falsifies it.
+// The four v0.4.0 spec rules are here for the same reason — at the tag they
+// fired on 172, 31, 27 and 3 fleet concepts — and move to Standard once the
+// fleet measures clean.
 func Strict() okf.Rules {
 	r := Standard()
+	r.Doc = append(r.Doc, ActorConvention, StatusVocabulary, FootnoteLabelsJoinSources, AttestedComputationHasContract)
 	r.Bundle = append(r.Bundle, LogVerbs(DefaultLogVerbs))
 	return r
 }

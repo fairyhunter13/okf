@@ -147,7 +147,6 @@ func staleFinding(add func(Severity, string, ...any) Finding, fm map[string]any,
 type link struct {
 	raw string // as written, so a message can quote it
 	rel string // bundle-relative, slash-separated
-	abs bool   // written with a leading "/"
 }
 
 // bundleLinks resolves the bundle-local links in a body. Code spans and fences
@@ -160,7 +159,7 @@ func bundleLinks(rel, body string) []link {
 			continue
 		}
 		if t, ok := strings.CutPrefix(target, "/"); ok {
-			out = append(out, link{raw: target, rel: path.Clean(t), abs: true})
+			out = append(out, link{raw: target, rel: path.Clean(t)})
 			continue
 		}
 		out = append(out, link{raw: target, rel: path.Join(path.Dir(rel), target)})
@@ -168,16 +167,12 @@ func bundleLinks(rel, body string) []link {
 	return out
 }
 
-// linkFindings reports dangling and bundle-absolute links. The spec tolerates
-// both (§6.1) — a dangling link may mark knowledge not yet written — so neither
-// is ever an error.
+// linkFindings reports dangling links. §6.1 tolerates one — it may mark
+// knowledge not yet written — so it is never an error. Whether a leading "/" is
+// acceptable is a producer opinion, and lives in rules.PreferRelativeLinks.
 func linkFindings(add func(Severity, string, ...any) Finding, root, rel, body string) []Finding {
 	var out []Finding
 	for _, l := range bundleLinks(rel, body) {
-		if l.abs {
-			// A leading "/" renders broken on GitHub, which is where bundles are read.
-			out = append(out, add(Warning, "bundle-absolute link %s breaks GitHub rendering: use a relative path", l.raw))
-		}
 		if _, err := os.Stat(filepath.Join(root, filepath.FromSlash(l.rel))); err != nil {
 			out = append(out, add(Warning, "link target not in bundle: %s", l.raw))
 		}

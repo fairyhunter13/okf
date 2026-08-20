@@ -18,6 +18,7 @@ var (
 	// tighter and is wrong: one bundle writes `- **Added** ...` without one, so
 	// it would drop eleven genuine drift verbs where drift is heaviest.
 	logDateRe = regexp.MustCompile(`^\d{4}-\d{2}-\d{2}`)
+	linkRe    = regexp.MustCompile(`\]\(([^)\s]+)`)
 )
 
 // NoIntraBundleWikilinks refuses `[[name]]` inside a bundle. OKF's graph is
@@ -108,4 +109,24 @@ func LogVerbs(verbs []string) okf.BundleRule {
 		}
 		return out
 	}
+}
+
+// PreferRelativeLinks refuses a link written with a leading "/". The engine
+// resolves one against the bundle root and finds the file, so nothing is
+// dangling — but GitHub reads it as repository-absolute and renders it broken,
+// and the reference viewer drops it, so the link produces no graph edge at all.
+// It is a warning because §6.1 only recommends a shape, and a producer opinion
+// is all this is.
+func PreferRelativeLinks(b okf.Bundle) []okf.Finding {
+	var out []okf.Finding
+	for _, d := range b.Docs {
+		for _, m := range linkRe.FindAllStringSubmatch(stripCode(d.Body), -1) {
+			target, _, _ := strings.Cut(m[1], "#")
+			if !strings.HasPrefix(target, "/") {
+				continue
+			}
+			out = append(out, okf.Finding{Path: d.Rel, Sev: okf.Warning, Msg: fmt.Sprintf("bundle-absolute link %s breaks GitHub rendering: use a relative path", target)})
+		}
+	}
+	return out
 }

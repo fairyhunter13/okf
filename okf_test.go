@@ -35,34 +35,6 @@ func TestGoogleBundlesConform(t *testing.T) {
 	}
 }
 
-// The relative-link rule is Google's, not the spec's: every bundle their agent
-// produced obeys it, because their authoring prompt mandates it. Only the
-// hand-authored acme_retail uses the absolute form the spec recommends — the
-// split is the evidence, so it is asserted in both directions.
-func TestGoogleAgentBundlesUseRelativeLinks(t *testing.T) {
-	absLinks := func(root string) int {
-		findings, err := CheckBundle(root, refDate)
-		if err != nil {
-			t.Fatal(err)
-		}
-		var n int
-		for _, f := range findings {
-			if strings.Contains(f.Msg, "bundle-absolute") {
-				n++
-			}
-		}
-		return n
-	}
-	for _, b := range []string{"ga4", "stackoverflow", "crypto_bitcoin"} {
-		if n := absLinks(filepath.Join("testdata/google", b)); n != 0 {
-			t.Errorf("%s: %d absolute links, want 0", b, n)
-		}
-	}
-	if n := absLinks("testdata/google/acme_retail"); n == 0 {
-		t.Error("acme_retail no longer uses absolute links: re-read the spec's §6.1 recommendation")
-	}
-}
-
 // §11 forbids rejecting a bundle over links, staleness, or filing, so those
 // findings must never escalate to Error, however the checker is later extended.
 func TestSeverityNeverEscalates(t *testing.T) {

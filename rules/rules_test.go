@@ -44,6 +44,23 @@ func check(t *testing.T, repo string, rules okf.Rules) []string {
 	return out
 }
 
+// warnings is check's other half: PreferRelativeLinks is the one rule here that
+// is deliberately not an Error, so asserting it needs the severity check flipped.
+func warnings(t *testing.T, repo string, rules okf.Rules) []string {
+	t.Helper()
+	findings, err := okf.CheckBundleWith(filepath.Join(repo, "knowledge"), refDate, rules)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var out []string
+	for _, f := range findings {
+		if f.Sev == okf.Warning {
+			out = append(out, f.String())
+		}
+	}
+	return out
+}
+
 func onlyDoc(r okf.Rule) okf.Rules          { return okf.Rules{Doc: []okf.Rule{r}} }
 func onlyBundle(r okf.BundleRule) okf.Rules { return okf.Rules{Bundle: []okf.BundleRule{r}} }
 
@@ -97,6 +114,27 @@ func TestVerifiedWellFormed(t *testing.T) {
 		"verified must be a mapping",
 		"verified.by must name a human",
 		"verified.at precedes generated.at")
+}
+
+// §5.2 makes the list the primary form; the bare mapping is its shorthand. The
+// rule read only the mapping until 2026-08-21, so every reference bundle — all
+// of which write the list — came back with one error per stamp.
+func TestVerifiedListIsTheSpecPrimaryForm(t *testing.T) {
+	repo := write(t, map[string]string{
+		"knowledge/index.md": "---\nokf_version: \"0.2\"\n---\n\n* [a](decisions/a.md)\n* [b](decisions/b.md)\n* [c](decisions/c.md)\n* [d](decisions/d.md)\n",
+		// One event, list form: the shape every Google bundle writes.
+		"knowledge/decisions/a.md": "---\ntype: Decision\nverified:\n  - {by: \"human:jsmith\", at: 2026-07-01T09:00:00Z}\n---\n\nbody\n",
+		// Two events: a process confirmed it, then a human reviewed it.
+		"knowledge/decisions/b.md": "---\ntype: Decision\nverified:\n  - {by: \"human:jsmith\", at: 2026-07-01T09:00:00Z}\n  - {by: \"human:kliu\", at: 2026-07-02T09:00:00Z}\n---\n\nbody\n",
+		// Every entry is checked, not just the first.
+		"knowledge/decisions/c.md": "---\ntype: Decision\nverified:\n  - {by: \"human:jsmith\", at: 2026-07-01T09:00:00Z}\n  - {by: claude-opus-5, at: 2026-07-02T09:00:00Z}\n---\n\nbody\n",
+		// A non-mapping entry is named, not silently dropped.
+		"knowledge/decisions/d.md": "---\ntype: Decision\nverified:\n  - yes\n---\n\nbody\n",
+	})
+
+	want(t, check(t, repo, onlyDoc(VerifiedWellFormed)),
+		"verified.by must name a human",
+		"verified entry must be a mapping")
 }
 
 func TestStaleAfterHasAReason(t *testing.T) {
@@ -193,4 +231,135 @@ func TestStandardTakesTheWikilinkAndLeavesTheVerb(t *testing.T) {
 	if got := check(t, repo, Strict()); len(got) != 2 {
 		t.Errorf("Strict reported %q, want the wikilink and the verb", got)
 	}
+}
+
+// The engine resolves a "/"-rooted link against the bundle root and finds the
+// file, so this fires on links nothing else reports. It moved out of the engine
+// in v0.4.0: which link shape a bundle prefers is a producer opinion, and §11
+// forbids the conformant half from holding one.
+func TestPreferRelativeLinks(t *testing.T) {
+	repo := write(t, map[string]string{
+		"knowledge/index.md": "---\nokf_version: \"0.2\"\n---\n\n* [a](decisions/a.md)\n* [b](decisions/b.md)\n",
+		// Resolves to a real file, so no dangling-link warning masks the result.
+		"knowledge/decisions/a.md": "---\ntype: Decision\n---\n\nsee [b](/decisions/b.md) and [rel](b.md) and [ext](https://example.invalid/x)\n",
+		// A fenced example of the shape is documentation, not a violation.
+		"knowledge/decisions/b.md": "---\ntype: Decision\n---\n\n```\n[bad](/decisions/a.md)\n```\n",
+	})
+
+	want(t, warnings(t, repo, onlyBundle(PreferRelativeLinks)),
+		"bundle-absolute link /decisions/b.md")
+}
+
+// The relative-link rule is Google's, not the spec's: every bundle their agent
+// produced obeys it, because their authoring prompt mandates it. Only the
+// hand-authored acme_retail uses the absolute form the spec recommends — the
+// split is the evidence, so it is asserted in both directions. It lives here
+// rather than beside the corpus because package okf can no longer see the rule.
+func TestGoogleAgentBundlesUseRelativeLinks(t *testing.T) {
+	absLinks := func(name string) int {
+		findings, err := okf.CheckBundleWith(filepath.Join("..", "testdata", "google", name), refDate, onlyBundle(PreferRelativeLinks))
+		if err != nil {
+			t.Fatal(err)
+		}
+		var n int
+		for _, f := range findings {
+			if strings.Contains(f.Msg, "bundle-absolute") {
+				n++
+			}
+		}
+		return n
+	}
+	for _, b := range []string{"ga4", "stackoverflow", "crypto_bitcoin"} {
+		if n := absLinks(b); n != 0 {
+			t.Errorf("%s: %d absolute links, want 0", b, n)
+		}
+	}
+	if n := absLinks("acme_retail"); n == 0 {
+		t.Error("acme_retail no longer uses absolute links: re-read the spec's §6.1 recommendation")
+	}
+}
+
+// The reference corpus is the one thing that can tell a spec rule apart from a
+// fleet preference. The spec-derived half must pass it clean — before v0.4.0 it
+// did not, and the eight verified stamps it rejected were all legal under §5.2.
+// TypeVocabulary, StaleAfterHasAReason and LogFrontmatter are excluded because
+// each is avowedly local, and each fails here: unknown types, undocumented
+// shelf life, and a log title Google spells its own way.
+func TestSpecDerivedRulesPassTheReferenceCorpus(t *testing.T) {
+	set := okf.Rules{
+		Doc:    []okf.Rule{ResourceResolves, VerifiedWellFormed},
+		Bundle: []okf.BundleRule{IndexHeadingsAreSingularTypes(DefaultTypes), NoIntraBundleWikilinks, PreferRelativeLinks},
+	}
+
+	for _, b := range []string{"acme_retail", "crypto_bitcoin", "ga4", "stackoverflow"} {
+		findings, err := okf.CheckBundleWith(filepath.Join("..", "testdata", "google", b), refDate, set)
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, f := range findings {
+			if f.Sev == okf.Error {
+				t.Errorf("%s: %s", b, f)
+			}
+		}
+	}
+}
+
+func TestActorConvention(t *testing.T) {
+	repo := write(t, map[string]string{
+		"knowledge/index.md": "---\nokf_version: \"0.2\"\n---\n\n* [a](decisions/a.md)\n* [b](decisions/b.md)\n* [c](decisions/c.md)\n* [d](decisions/d.md)\n",
+		// All four §7 forms, each of which must pass.
+		"knowledge/decisions/a.md": "---\ntype: Decision\ngenerated: {by: claude/opus-5, at: 2026-07-01T09:00:00Z}\n---\n\nbody\n",
+		"knowledge/decisions/b.md": "---\ntype: Decision\ngenerated: {by: \"team:data-platform\", at: 2026-07-01T09:00:00Z}\n---\n\nbody\n",
+		// A model name with no version half reads as free text, which is the drift.
+		"knowledge/decisions/c.md": "---\ntype: Decision\ngenerated: {by: claude-opus-5, at: 2026-07-01T09:00:00Z}\n---\n\nbody\n",
+		// The stamp is checked on the same terms as the byline.
+		"knowledge/decisions/d.md": "---\ntype: Decision\nverified:\n  - {by: jsmith, at: 2026-07-01T09:00:00Z}\n---\n\nbody\n",
+	})
+
+	want(t, check(t, repo, onlyDoc(ActorConvention)),
+		`generated.by is outside §7's actor forms`,
+		`verified.by is outside §7's actor forms`)
+}
+
+func TestStatusVocabulary(t *testing.T) {
+	repo := write(t, map[string]string{
+		"knowledge/index.md": "---\nokf_version: \"0.2\"\n---\n\n* [a](decisions/a.md)\n* [b](decisions/b.md)\n* [c](decisions/c.md)\n",
+		// Absent means stable (§5.4), so this is not a finding.
+		"knowledge/decisions/a.md": okFM,
+		"knowledge/decisions/b.md": "---\ntype: Decision\nstatus: deprecated\n---\n\nbody\n",
+		"knowledge/decisions/c.md": "---\ntype: Decision\nstatus: resolved\n---\n\nbody\n",
+	})
+
+	want(t, check(t, repo, onlyDoc(StatusVocabulary)), `status "resolved" is outside §5.4`)
+}
+
+func TestFootnoteLabelsJoinSources(t *testing.T) {
+	repo := write(t, map[string]string{
+		"knowledge/index.md":       "---\nokf_version: \"0.2\"\n---\n\n* [a](decisions/a.md)\n* [b](decisions/b.md)\n* [c](decisions/c.md)\n",
+		"knowledge/decisions/a.md": "---\ntype: Decision\nsources:\n  - {id: rfc9110, uri: \"https://example.invalid/rfc9110\"}\n---\n\nclaim[^rfc9110]\n\n[^rfc9110]: RFC 9110\n",
+		// A position, not a key: renumber the list and the citation retargets.
+		"knowledge/decisions/b.md": "---\ntype: Decision\nsources:\n  - {id: rfc9110, uri: \"https://example.invalid/rfc9110\"}\n---\n\nclaim[^1]\n\n[^1]: RFC 9110\n",
+		// A fenced example of the shape is documentation, not a violation.
+		"knowledge/decisions/c.md": "---\ntype: Decision\n---\n\n```\n[^1]: example\n```\n",
+	})
+
+	want(t, check(t, repo, onlyDoc(FootnoteLabelsJoinSources)), "footnote [^1] names no sources[].id")
+}
+
+func TestAttestedComputationHasContract(t *testing.T) {
+	repo := write(t, map[string]string{
+		"knowledge/index.md":          "---\nokf_version: \"0.2\"\n---\n\n* [a](computations/a.md)\n* [b](computations/b.md)\n* [c](computations/c.md)\n* [d](computations/d.md)\n",
+		"scripts/revenue.sql":         "select 1",
+		"knowledge/computations/a.md": "---\ntype: Attested Computation\nruntime: bigquery\n---\n\n# Computation\n\n```sql\nselect 1\n```\n",
+		"knowledge/computations/b.md": "---\ntype: Attested Computation\nruntime: bigquery\ncomputation: scripts/revenue.sql\n---\n\nbody\n",
+		// No runtime, and neither carrier of the computation itself.
+		"knowledge/computations/c.md": "---\ntype: Attested Computation\n---\n\n# Freshness\n\n```\ndaily\n```\n",
+		// Both carriers: a reader has two sources of truth to reconcile.
+		"knowledge/computations/d.md": "---\ntype: Attested Computation\nruntime: bigquery\ncomputation: scripts/revenue.sql\n---\n\n# Computation\n\n```sql\nselect 1\n```\n",
+	})
+
+	want(t, check(t, repo, onlyDoc(AttestedComputationHasContract)),
+		"needs `runtime`",
+		"needs exactly one of",
+		"needs exactly one of")
 }
