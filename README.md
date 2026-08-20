@@ -70,3 +70,11 @@ a verdict depending on which one ran would be no verdict.
 Sweep exits 0 on findings. It is a report, not a gate: a red not attached to a
 change is the accumulating advisory the severity split exists to avoid. Exit 1
 means the sweep itself did not run.
+
+## Why this repo has no `knowledge/`
+
+Swept and refused, not overlooked. Every non-obvious decision here is already a
+load-bearing comment at the site it constrains — the severity split, the §11
+refusals, the parse rules — and a bundle would give each of them two edit sites,
+one of which would go stale first. `okf-bootstrap`'s own test is whether the
+reasons are recoverable from the code; in ~400 lines describing a spec, they are.
