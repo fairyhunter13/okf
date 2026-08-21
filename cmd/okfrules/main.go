@@ -10,10 +10,14 @@ import (
 
 	"github.com/fairyhunter13/okf"
 	"github.com/fairyhunter13/okf/rules"
+	"github.com/fairyhunter13/okf/verify"
 )
 
 func main() {
 	set, args := selectRules(os.Args[1:])
+	if len(args) > 0 && args[0] == "verify" {
+		os.Exit(verify.Main(args[1:], os.Stderr, set))
+	}
 	os.Exit(okf.MainWith(args, os.Stderr, set))
 }
 

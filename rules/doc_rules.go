@@ -83,14 +83,11 @@ func TypeVocabulary(types []string) okf.Rule {
 	}
 }
 
-// VerifiedWellFormed refuses a stamp an agent could have written. v0.2 splits
-// provenance from trust: `generated:` says who wrote a concept and `verified:`
-// who confirmed it, so a stamp naming a model, or naming nobody, is the whole
-// key defeated.
-//
-// §5.2 makes the list the primary form and a bare mapping its shorthand, so
-// both parse and every event is checked. Reading only the mapping rejected all
-// four reference bundles, which write the list.
+// VerifiedWellFormed holds a stamp to §5.2's shape. Demanding a `human:` actor
+// made §5.3's machine-confirmed tier unreachable — the spec's own example stamps
+// `process:finance-nightly` — so actor shape is [ActorConvention]'s job now, and
+// forgery is [Stamp]'s: it refuses `human:` under CLAUDECODE, which is a fact
+// about who is running that no document rule can see.
 func VerifiedWellFormed(d okf.Doc) []okf.Finding {
 	raw, ok := d.FM["verified"]
 	if !ok {
@@ -110,11 +107,6 @@ func VerifiedWellFormed(d okf.Doc) []okf.Finding {
 
 	var out []okf.Finding
 	for _, m := range events {
-		by, _ := str(m["by"])
-		if !strings.HasPrefix(by, "human:") {
-			out = append(out, okf.Finding{Sev: okf.Error, Msg: fmt.Sprintf("verified.by must name a human, as `human:<name>`: %q", by)})
-			continue
-		}
 		stamped, err := parseWhen(m["at"])
 		if err != nil {
 			out = append(out, okf.Finding{Sev: okf.Error, Msg: fmt.Sprintf("verified.at is not a timestamp: %v", m["at"])})
@@ -219,6 +211,18 @@ func ActorConvention(d okf.Doc) []okf.Finding {
 			}
 		}
 	}
+	// §5.1 binds `author` to §7 too. Unchecked, one bundle had spelled the same
+	// publisher `org:anthropic` and `team:anthropic` on adjacent concepts.
+	if list, ok := d.FM["sources"].([]any); ok {
+		for _, e := range list {
+			m, ok := e.(map[string]any)
+			if !ok {
+				continue
+			}
+			by, _ := str(m["author"])
+			check("sources[].author", by)
+		}
+	}
 	return out
 }
 
@@ -309,4 +313,24 @@ func computationSection(body string) string {
 		return rest
 	}
 	return ""
+}
+
+// SourceHasAResource holds §5.1's one REQUIRED key. An entry written as a bare
+// string, or keyed `url:`, reads like provenance and names nothing a consumer
+// can follow: four fleet concepts were unverifiable that way, with the checker
+// silent about all four.
+func SourceHasAResource(d okf.Doc) []okf.Finding {
+	list, _ := d.FM["sources"].([]any)
+	var out []okf.Finding
+	for i, e := range list {
+		m, ok := e.(map[string]any)
+		if !ok {
+			out = append(out, okf.Finding{Sev: okf.Error, Msg: fmt.Sprintf("sources[%d] is not a mapping, so it has no `resource:` (§5.1)", i)})
+			continue
+		}
+		if res, _ := str(m["resource"]); res == "" {
+			out = append(out, okf.Finding{Sev: okf.Error, Msg: fmt.Sprintf("sources[%d] has no `resource:`, the one key §5.1 requires within an entry", i)})
+		}
+	}
+	return out
 }

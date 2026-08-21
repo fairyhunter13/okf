@@ -43,6 +43,7 @@ func Standard() okf.Rules {
 			ActorConvention,
 			StatusVocabulary,
 			FootnoteLabelsJoinSources,
+			SourceHasAResource,
 			AttestedComputationHasContract,
 		},
 		Bundle: []okf.BundleRule{

@@ -106,13 +106,13 @@ func TestVerifiedWellFormed(t *testing.T) {
 		"knowledge/index.md":       "---\nokf_version: \"0.2\"\n---\n\n* [a](decisions/a.md)\n* [b](decisions/b.md)\n* [c](decisions/c.md)\n* [d](decisions/d.md)\n",
 		"knowledge/decisions/a.md": "---\ntype: Decision\ngenerated: {by: claude-opus-5, at: 2026-08-01T00:00:00Z}\nverified: {by: \"human:fairyhunter13\", at: 2026-08-02T00:00:00Z}\n---\n\nbody\n",
 		"knowledge/decisions/b.md": "---\ntype: Decision\nverified: true\n---\n\nbody\n",
-		"knowledge/decisions/c.md": "---\ntype: Decision\nverified: {by: claude-opus-5, at: 2026-08-02T00:00:00Z}\n---\n\nbody\n",
+		// §5.3's machine-confirmed tier: a stamp naming no human is legal.
+		"knowledge/decisions/c.md": "---\ntype: Decision\nverified: {by: \"process:okf-verify\", at: 2026-08-02T00:00:00Z}\n---\n\nbody\n",
 		"knowledge/decisions/d.md": "---\ntype: Decision\ngenerated: {by: claude-opus-5, at: 2026-08-05T00:00:00Z}\nverified: {by: \"human:fairyhunter13\", at: 2026-08-02T00:00:00Z}\n---\n\nbody\n",
 	})
 
 	want(t, check(t, repo, onlyDoc(VerifiedWellFormed)),
 		"verified must be a mapping",
-		"verified.by must name a human",
 		"verified.at precedes generated.at")
 }
 
@@ -124,16 +124,16 @@ func TestVerifiedListIsTheSpecPrimaryForm(t *testing.T) {
 		"knowledge/index.md": "---\nokf_version: \"0.2\"\n---\n\n* [a](decisions/a.md)\n* [b](decisions/b.md)\n* [c](decisions/c.md)\n* [d](decisions/d.md)\n",
 		// One event, list form: the shape every Google bundle writes.
 		"knowledge/decisions/a.md": "---\ntype: Decision\nverified:\n  - {by: \"human:jsmith\", at: 2026-07-01T09:00:00Z}\n---\n\nbody\n",
-		// Two events: a process confirmed it, then a human reviewed it.
-		"knowledge/decisions/b.md": "---\ntype: Decision\nverified:\n  - {by: \"human:jsmith\", at: 2026-07-01T09:00:00Z}\n  - {by: \"human:kliu\", at: 2026-07-02T09:00:00Z}\n---\n\nbody\n",
+		// §5.2's own pairing: a human sign-off and a nightly process on one concept.
+		"knowledge/decisions/b.md": "---\ntype: Decision\nverified:\n  - {by: \"human:jsmith\", at: 2026-07-01T09:00:00Z}\n  - {by: \"process:finance-nightly\", at: 2026-07-02T09:00:00Z}\n---\n\nbody\n",
 		// Every entry is checked, not just the first.
-		"knowledge/decisions/c.md": "---\ntype: Decision\nverified:\n  - {by: \"human:jsmith\", at: 2026-07-01T09:00:00Z}\n  - {by: claude-opus-5, at: 2026-07-02T09:00:00Z}\n---\n\nbody\n",
+		"knowledge/decisions/c.md": "---\ntype: Decision\nverified:\n  - {by: \"human:jsmith\", at: 2026-07-01T09:00:00Z}\n  - {by: \"process:okf-verify\", at: not-a-time}\n---\n\nbody\n",
 		// A non-mapping entry is named, not silently dropped.
 		"knowledge/decisions/d.md": "---\ntype: Decision\nverified:\n  - yes\n---\n\nbody\n",
 	})
 
 	want(t, check(t, repo, onlyDoc(VerifiedWellFormed)),
-		"verified.by must name a human",
+		"verified.at is not a timestamp",
 		"verified entry must be a mapping")
 }
 
@@ -306,7 +306,7 @@ func TestSpecDerivedRulesPassTheReferenceCorpus(t *testing.T) {
 
 func TestActorConvention(t *testing.T) {
 	repo := write(t, map[string]string{
-		"knowledge/index.md": "---\nokf_version: \"0.2\"\n---\n\n* [a](decisions/a.md)\n* [b](decisions/b.md)\n* [c](decisions/c.md)\n* [d](decisions/d.md)\n",
+		"knowledge/index.md": "---\nokf_version: \"0.2\"\n---\n\n* [a](decisions/a.md)\n* [b](decisions/b.md)\n* [c](decisions/c.md)\n* [d](decisions/d.md)\n* [e](decisions/e.md)\n",
 		// All four §7 forms, each of which must pass.
 		"knowledge/decisions/a.md": "---\ntype: Decision\ngenerated: {by: claude/opus-5, at: 2026-07-01T09:00:00Z}\n---\n\nbody\n",
 		"knowledge/decisions/b.md": "---\ntype: Decision\ngenerated: {by: \"team:data-platform\", at: 2026-07-01T09:00:00Z}\n---\n\nbody\n",
@@ -314,11 +314,14 @@ func TestActorConvention(t *testing.T) {
 		"knowledge/decisions/c.md": "---\ntype: Decision\ngenerated: {by: claude-opus-5, at: 2026-07-01T09:00:00Z}\n---\n\nbody\n",
 		// The stamp is checked on the same terms as the byline.
 		"knowledge/decisions/d.md": "---\ntype: Decision\nverified:\n  - {by: jsmith, at: 2026-07-01T09:00:00Z}\n---\n\nbody\n",
+		// §5.1 binds a source's author to §7 on the same terms.
+		"knowledge/decisions/e.md": "---\ntype: Decision\nsources:\n  - {resource: \"https://example.invalid/x\", author: \"org:anthropic\"}\n---\n\nbody\n",
 	})
 
 	want(t, check(t, repo, onlyDoc(ActorConvention)),
 		`generated.by is outside §7's actor forms`,
-		`verified.by is outside §7's actor forms`)
+		`verified.by is outside §7's actor forms`,
+		`sources[].author is outside §7's actor forms`)
 }
 
 func TestStatusVocabulary(t *testing.T) {
@@ -344,6 +347,19 @@ func TestFootnoteLabelsJoinSources(t *testing.T) {
 	})
 
 	want(t, check(t, repo, onlyDoc(FootnoteLabelsJoinSources)), "footnote [^1] names no sources[].id")
+}
+
+func TestSourceHasAResource(t *testing.T) {
+	repo := write(t, map[string]string{
+		"knowledge/index.md": "---\nokf_version: \"0.2\"\n---\n\n* [a](decisions/a.md)\n* [b](decisions/b.md)\n* [c](decisions/c.md)\n",
+		// A scope descriptor is a resource: §5.1 admits one a consumer cannot follow.
+		"knowledge/decisions/a.md": "---\ntype: Decision\nsources:\n  - {resource: all queries in project X}\n---\n\nbody\n",
+		"knowledge/decisions/b.md": "---\ntype: Decision\nsources:\n  - internal/x_test.go\n---\n\nbody\n",
+		"knowledge/decisions/c.md": "---\ntype: Decision\nsources:\n  - {id: crbug, url: \"https://example.invalid/1\"}\n---\n\nbody\n",
+	})
+
+	want(t, check(t, repo, onlyDoc(SourceHasAResource)),
+		"sources[0] is not a mapping", "sources[0] has no `resource:`")
 }
 
 func TestAttestedComputationHasContract(t *testing.T) {

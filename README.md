@@ -4,7 +4,7 @@ A checker for [OKF v0.2](https://github.com/GoogleCloudPlatform/knowledge-catalo
 bundles — directories of markdown with YAML frontmatter.
 
 ```
-go install github.com/fairyhunter13/okf/cmd/okf@v0.4.1
+go install github.com/fairyhunter13/okf/cmd/okf@v0.5.0
 okf check knowledge          # conformance errors exit 1
 okf check -Werror knowledge  # warnings exit 1 too
 ```
@@ -28,6 +28,7 @@ bug in the checker.
 |---|---|
 | `okf` | the engine: §11 conformance, `Parse`, `CheckBundle`, `Rule`/`BundleRule` |
 | `okf/rules` | the fleet's own invariants, which §11 forbids the engine to enforce |
+| `okf/verify` | the machine stamp: source digests, commit and path checks, the writer |
 | `okf/sweep` | the fleet report, which imports both |
 
 `rules` is a package and not part of `okf` so that importing the engine gets a
@@ -65,7 +66,7 @@ themselves, so adding one never moves a line the stock check already prints —
 ## The fleet rules
 
 ```
-go install github.com/fairyhunter13/okf/cmd/okfrules@v0.4.1
+go install github.com/fairyhunter13/okf/cmd/okfrules@v0.5.0
 okfrules check -Werror knowledge
 okfrules -strict check -Werror knowledge
 ```
@@ -74,7 +75,7 @@ okfrules -strict check -Werror knowledge
 |---|---|
 | `ResourceResolves` | a `resource:` naming a path that is gone |
 | `TypeVocabulary` | a `type` outside the skills' table |
-| `VerifiedWellFormed` | a `verified:` stamp not naming a `human:`, or older than `generated.at` |
+| `VerifiedWellFormed` | a `verified:` stamp whose `at` will not parse, or is older than `generated.at` |
 | `StaleAfterHasAReason` | a `stale_after` with no `sources:` naming what expires |
 | `IndexHeadingsAreSingularTypes` | `## Decisions` where the table says `Decision` |
 | `LogFrontmatter` | a `log.md` missing `type: Log` or its `title` |
@@ -83,6 +84,7 @@ okfrules -strict check -Werror knowledge
 | `ActorConvention` | a `by:` outside §7's `<producer>/<version>`, `human:`, `process:`, `team:` |
 | `StatusVocabulary` | a `status` outside §5.4's `draft \| stable \| deprecated` |
 | `FootnoteLabelsJoinSources` | a `[^1]` footnote where §5.1 requires a `sources[].id` |
+| `SourceHasAResource` | a `sources` entry with no `resource:`, §5.1's one required key |
 | `AttestedComputationHasContract` | an `Attested Computation` with no `runtime`, or with no readable computation |
 | `LogVerbs` | a log entry led by something outside the five verbs |
 
@@ -103,6 +105,46 @@ offending entries across the three bundles that fired, 57 ordinary drift since
 renamed, and 26 left in two bundles: 13 sentences and 13 labels the five verbs
 have no word for (`Refused`, `Refutation`, `Not changed`). Rewriting dated
 history to fit a closed vocabulary falsifies it.
+
+## Machine verification
+
+```
+okf verify knowledge                       # report only; writes nothing
+okf verify -stamp -run-verifiers knowledge
+```
+
+§5.3 derives three trust tiers from the stamp's *actor*: no `verified` key is
+unverified, a non-`human:` actor is machine-confirmed, and a `human:` one is
+human-reviewed. `verify` writes the middle tier — `process:okf-verify` by
+default — and it writes it only on evidence it just checked:
+
+| Gate | What it settles |
+|---|---|
+| the bundle check | the document raises no error under the caller's rules |
+| `sources[].resource` | a `commit <sha>` is in this history, a path exists, a URL still hashes to its recorded `digest:` |
+| `verifier.command` | the repo's own test for the claim exits 0, and only under `-run-verifiers` |
+
+A concept with nothing outward to check is **not stampable** and stays
+unverified: 33 of 295 fleet concepts earn a stamp, and rubber-stamping the other
+262 would cost the key its meaning. A `resource` that is a scope descriptor
+(§5.1 allows one a consumer cannot follow) earns no credit and is not a failure.
+
+`digest:` is a producer-defined key under §4.1. The first run records it, later
+runs compare, and a mismatch blocks the stamp and names both digests — which is
+the drift a `stale_after` date cannot see, since it fires on the calendar and
+not on the upstream page. GitHub `blob` URLs are hashed through
+`raw.githubusercontent.com`, and an extensionless docs path is tried as `.md`
+first: the HTML those hosts serve is an app shell whose hash moves on every site
+deploy.
+
+`Stamp` refuses `-by human:*` when `CLAUDECODE` is set. A human sign-off is the
+one tier no run can earn, so it is the one an agent must not write, and that is
+a fact about who is running that no document rule can see.
+
+The write is a line insert at the canonical position, never a YAML round-trip:
+every byte outside the inserted block is unchanged, an existing `human:` event
+is carried through verbatim, and re-running updates the process event in place
+rather than appending a second one.
 
 ## Fleet sweep
 
