@@ -4,7 +4,7 @@ A checker for [OKF v0.2](https://github.com/GoogleCloudPlatform/knowledge-catalo
 bundles — directories of markdown with YAML frontmatter.
 
 ```
-go install github.com/fairyhunter13/okf/cmd/okf@v0.5.3
+go install github.com/fairyhunter13/okf/cmd/okf@v0.6.0
 okf check knowledge          # conformance errors exit 1
 okf check -Werror knowledge  # warnings exit 1 too
 ```
@@ -20,7 +20,8 @@ them, and `TestSeverityNeverEscalates` keeps it that way.
 
 Conformance is pinned to Google's four reference bundles in `testdata/google/`
 rather than to a reading of the spec: whatever the checker rejects there is a
-bug in the checker.
+bug in the checker. Upstream ships no tags, so the vendored copy records the
+commit it came from and a refresh diffs against that.
 
 ## Packages
 
@@ -66,7 +67,7 @@ themselves, so adding one never moves a line the stock check already prints —
 ## The fleet rules
 
 ```
-go install github.com/fairyhunter13/okf/cmd/okfrules@v0.5.3
+go install github.com/fairyhunter13/okf/cmd/okfrules@v0.6.0
 okfrules check -Werror knowledge
 okfrules -strict check -Werror knowledge
 ```
@@ -87,6 +88,7 @@ okfrules -strict check -Werror knowledge
 | `SourceHasAResource` | a `sources` entry with no `resource:`, §5.1's one required key |
 | `AttestedComputationHasContract` | an `Attested Computation` with no `runtime`, or with no readable computation |
 | `LogVerbs` | a log entry led by something outside the five verbs |
+| `TimestampsCarryAnOffset` | a date where §5 wants an instant — `2026-12-31` names a different moment in every timezone |
 
 `Standard()` is everything but `LogVerbs`, and all but `PreferRelativeLinks` are
 errors rather than the spec's advisory half: each says a concept describes
@@ -100,11 +102,56 @@ concepts, waited one tag in `Strict()` while that was converted, and are
 `Standard()` from v0.4.1 with all ten bundles measuring zero. That is the
 promotion condition, and it is the same one `NoIntraBundleWikilinks` met.
 
-`Strict()` adds `LogVerbs` alone, opt-in on a measurement — 2026-08-21, 84
-offending entries across the three bundles that fired, 57 ordinary drift since
-renamed, and 26 left in two bundles: 13 sentences and 13 labels the five verbs
-have no word for (`Refused`, `Refutation`, `Not changed`). Rewriting dated
-history to fit a closed vocabulary falsifies it.
+`Strict()` adds `LogVerbs` and `TimestampsCarryAnOffset`, both opt-in on a
+measurement. The timestamp rule is upstream's 2026-08-20 change to §5, which
+shipped with no version bump; it fires on 30 fleet concepts across four repos
+and promotes at zero, like the four spec rules did.
+
+`LogVerbs` measured 84 offending entries on 2026-08-21 across the three bundles
+that fired: 57 ordinary drift, since renamed, and 26 left in two bundles — 13
+sentences and 13 labels the five verbs have no word for (`Refused`,
+`Refutation`, `Not changed`). Rewriting dated history to fit a closed
+vocabulary falsifies it.
+
+## Augment, never shrink
+
+```
+okf check -against HEAD knowledge
+```
+
+Compares each concept against its blob at a git ref and reports what it lost: a
+dropped or reordered `#` heading, a `sources` entry gone, a `verified` event
+gone, a rewritten `type`, `title` or `resource`. The reference implementation
+refuses the same writes at its tool boundary; an agent here writes files
+directly, so a gate with git behind it is the only place left that can see the
+previous version.
+
+Findings are warnings and nothing wires the flag into a gate yet — a real
+deprecation does drop things, which is why `status: deprecated` is exempt and
+why this waits a tag like every other rule. A concept absent at the ref is new
+and cannot have shrunk.
+
+## The viewer
+
+```
+okf viz knowledge                 # -> knowledge/viz.html
+okf viz -o /tmp/x.html -name RSE knowledge
+```
+
+One self-contained page: the concept graph laid out at generate time, each
+concept's frontmatter and rendered body, trust tier, staleness, and who cites
+whom. It vendors nothing — no CDN, no bundled library — because a bundle is
+markdown in a git repo and its viewer should still open on a machine with no
+network in five years.
+
+Nodes are concepts, so `index.md` and `log.md` are excluded, and edges come from
+the same `bundleLinks` the dangling-link check uses. That resolves the
+`/from-the-bundle-root` spelling, which the reference generator drops: on
+`testdata/google/acme_retail` its own committed page draws 6 edges where this
+draws 14.
+
+Generate it on demand; don't commit it. Upstream commits theirs, and the commit
+that fixed it records why not.
 
 ## Machine verification
 

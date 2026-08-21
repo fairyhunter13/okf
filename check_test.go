@@ -47,6 +47,11 @@ func TestCheckFile(t *testing.T) {
 		{name: "log bad heading", rel: "log.md", text: "## Last week\n- x\n", wantSev: Error, wantFindings: 1},
 		{name: "stale", rel: "decisions/x.md", text: "---\ntype: Decision\nstale_after: 2026-01-01\n---\n", wantSev: Warning, wantFindings: 1},
 		{name: "fresh", rel: "decisions/x.md", text: "---\ntype: Decision\nstale_after: 2027-01-01\n---\n"},
+		// refDate is 2026-08-16T00:00:00Z. Truncating to YYYY-MM-DD read this as
+		// the 15th and called it stale; as an instant it is three hours away.
+		{name: "offset decides the boundary", rel: "decisions/x.md", text: "---\ntype: Decision\nstale_after: 2026-08-15T20:00:00-07:00\n---\n"},
+		{name: "stale by offset", rel: "decisions/x.md", text: "---\ntype: Decision\nstale_after: 2026-08-16T05:00:00+07:00\n---\n", wantSev: Warning, wantFindings: 1},
+		{name: "stale_after is not a timestamp", rel: "decisions/x.md", text: "---\ntype: Decision\nstale_after: soon\n---\n", wantSev: Warning, wantFindings: 1},
 		{name: "broken link", rel: "decisions/x.md", text: "---\ntype: Decision\n---\n[a](nope.md)\n", wantSev: Warning, wantFindings: 1},
 		// A "/" root means the bundle root, not the filesystem: the engine resolves
 		// it and reports only what dangles. Preferring the relative spelling is a

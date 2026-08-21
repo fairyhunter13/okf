@@ -30,6 +30,26 @@ func (b Bundle) Concepts() []Doc {
 	return out
 }
 
+// Links returns d's bundle-local link targets that resolve to a document in b,
+// in body order, deduped, self-links dropped. This is the same resolution
+// [CheckBundle] uses to find dangling links and orphans — including the
+// "/"-rooted spelling, which a consumer that drops it renders as no edge at all.
+func (b Bundle) Links(d Doc) []string {
+	seen := map[string]bool{d.Rel: true}
+	var out []string
+	for _, l := range bundleLinks(d.Rel, d.Body) {
+		if seen[l.rel] {
+			continue
+		}
+		if _, ok := b.Find(l.rel); !ok {
+			continue
+		}
+		seen[l.rel] = true
+		out = append(out, l.rel)
+	}
+	return out
+}
+
 // Find returns the document at this bundle-relative path, or false.
 func (b Bundle) Find(rel string) (Doc, bool) {
 	for _, d := range b.Docs {

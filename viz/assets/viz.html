@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>__NAME__ — OKF bundle</title>
+<style>/*__CSS__*/</style>
+</head>
+<body>
+<header>
+  <h1>__NAME__</h1>
+  <input id="q" type="search" placeholder="Search title, id, tag, description" aria-label="Search concepts">
+  <select id="type" aria-label="Filter by type"><option value="">All types</option></select>
+  <button id="reset" type="button">Reset</button>
+  <span class="count" id="count"></span>
+</header>
+<main>
+  <div id="graph">
+    <svg id="svg" viewBox="0 0 1080 1080" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Concept graph">
+      <g id="root"></g>
+    </svg>
+  </div>
+  <aside id="detail"></aside>
+</main>
+<script id="data" type="application/json">/*__DATA__*/</script>
+<script>window.__OKF__ = JSON.parse(document.getElementById('data').textContent);</script>
+<script>/*__JS__*/</script>
+</body>
+</html>

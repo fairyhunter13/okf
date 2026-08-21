@@ -1,0 +1,79 @@
+{
+  "name": "Fixture",
+  "nodes": [
+    {
+      "id": "decisions/a.md",
+      "type": "Decision",
+      "title": "The absolute form is a link",
+      "description": "Both spellings resolve.",
+      "tags": [
+        "okf",
+        "viz"
+      ],
+      "generated": "agent/1 2026-08-20T00:00:00Z",
+      "trust": "unverified",
+      "body": "\u003ch2\u003eWhy\u003c/h2\u003e\u003cp\u003eRooted: \u003ca href=\"/metrics/b.md\"\u003eb\u003c/a\u003e, relative: \u003ca href=\"../metrics/c.md\"\u003ec\u003c/a\u003e.\u003c/p\u003e\u003cp\u003eAbsent: \u003ca href=\"/metrics/gone.md\"\u003egone\u003c/a\u003e. Reserved: \u003ca href=\"/log.md\"\u003elog\u003c/a\u003e. Self: \u003ca href=\"/decisions/a.md\"\u003ea\u003c/a\u003e.\u003c/p\u003e\u003cpre class=\"code\" data-lang=\"\"\u003e\u003ccode\u003eFenced: [b](/metrics/b.md)\u003c/code\u003e\u003c/pre\u003e",
+      "x": 500,
+      "y": 500,
+      "r": 15
+    },
+    {
+      "id": "metrics/b.md",
+      "type": "Metric",
+      "title": "Human-reviewed and stale",
+      "resource": "sql/b.sql",
+      "status": "active",
+      "verified": [
+        "agent/1 2026-08-01T00:00:00Z",
+        "human:hafiz 2026-08-02T00:00:00Z"
+      ],
+      "stale_after": "2026-01-01T00:00:00Z",
+      "sources": [
+        {
+          "resource": "https://example.test/spec",
+          "title": "The spec",
+          "last_modified": "2026-07-01T00:00:00Z"
+        }
+      ],
+      "trust": "human-reviewed",
+      "stale": true,
+      "body": "\u003ch2\u003eB\u003c/h2\u003e",
+      "x": 960,
+      "y": 40,
+      "r": 14,
+      "cited_by": [
+        "decisions/a.md"
+      ]
+    },
+    {
+      "id": "metrics/c.md",
+      "type": "Metric",
+      "title": "Machine-confirmed only",
+      "verified": [
+        "okf verify 2026-08-03T00:00:00Z"
+      ],
+      "trust": "machine-confirmed",
+      "body": "\u003ch2\u003eC\u003c/h2\u003e",
+      "x": 40,
+      "y": 960,
+      "r": 14,
+      "cited_by": [
+        "decisions/a.md"
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "f": "decisions/a.md",
+      "t": "metrics/b.md"
+    },
+    {
+      "f": "decisions/a.md",
+      "t": "metrics/c.md"
+    }
+  ],
+  "types": [
+    "Decision",
+    "Metric"
+  ]
+}

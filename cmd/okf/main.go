@@ -8,6 +8,7 @@ import (
 	"github.com/fairyhunter13/okf"
 	"github.com/fairyhunter13/okf/sweep"
 	"github.com/fairyhunter13/okf/verify"
+	"github.com/fairyhunter13/okf/viz"
 )
 
 func main() {
@@ -22,6 +23,9 @@ func run(args []string, w io.Writer) int {
 	}
 	if len(args) > 0 && args[0] == "verify" {
 		return verify.Main(args[1:], w, okf.Rules{})
+	}
+	if len(args) > 0 && args[0] == "viz" {
+		return viz.Main(args[1:], w)
 	}
 	return okf.Main(args, w)
 }

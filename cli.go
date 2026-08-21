@@ -17,13 +17,22 @@ func Main(args []string, w io.Writer, rules ...Rule) int {
 // MainWith is [Main] with bundle-wide rules as well.
 func MainWith(args []string, w io.Writer, rules Rules) int {
 	if len(args) == 0 || args[0] != "check" {
-		fmt.Fprintln(w, "usage: okf check [-Werror] [bundle...]")
+		fmt.Fprintln(w, "usage: okf check [-Werror] [-against <ref>] [bundle...]")
 		return 2
 	}
 	roots := args[1:]
 	var werror bool
-	if len(roots) > 0 && roots[0] == "-Werror" {
-		werror, roots = true, roots[1:]
+	var against string
+parse:
+	for len(roots) > 0 {
+		switch {
+		case roots[0] == "-Werror":
+			werror, roots = true, roots[1:]
+		case roots[0] == "-against" && len(roots) > 1:
+			against, roots = roots[1], roots[2:]
+		default:
+			break parse
+		}
 	}
 	if len(roots) == 0 {
 		roots = []string{"knowledge"}
@@ -36,6 +45,14 @@ func MainWith(args []string, w io.Writer, rules Rules) int {
 		if err != nil {
 			fmt.Fprintf(w, "okf: %v\n", err)
 			return 2
+		}
+		if against != "" {
+			shrunk, err := CheckAgainst(root, against)
+			if err != nil {
+				fmt.Fprintf(w, "okf: %v\n", err)
+				return 2
+			}
+			findings = append(findings, shrunk...)
 		}
 		for _, f := range findings {
 			fmt.Fprintf(w, "%s/%s\n", root, f)

@@ -143,18 +143,7 @@ func verifiedEvents(raw any) ([]map[string]any, error) {
 	return nil, fmt.Errorf("verified must be a mapping with `by` and `at`, or a list of them")
 }
 
-func parseWhen(raw any) (time.Time, error) {
-	if t, ok := raw.(time.Time); ok {
-		return t, nil
-	}
-	s := fmt.Sprintf("%v", raw)
-	for _, layout := range []string{time.RFC3339, "2006-01-02"} {
-		if t, err := time.Parse(layout, s); err == nil {
-			return t, nil
-		}
-	}
-	return time.Time{}, fmt.Errorf("unparsable: %q", s)
-}
+func parseWhen(raw any) (time.Time, error) { return okf.ParseTimestamp(raw) }
 
 // StaleAfterHasAReason keeps the date for genuine shelf life — a vendor EOL, a
 // certificate — by requiring the external thing that expires to be named. A
@@ -333,4 +322,40 @@ func SourceHasAResource(d okf.Doc) []okf.Finding {
 		}
 	}
 	return out
+}
+
+// §5's preamble, since 2026-08-20: "Every timestamp-valued key in OKF is an
+// ISO 8601 datetime with an explicit UTC offset." The value has to be read as
+// written, because YAML decodes `2026-12-31` and `2026-12-31T00:00:00Z` to the
+// same instant and the difference is exactly what this grades.
+var (
+	// Block style and flow style both, because `generated: {by: x, at: y}` is
+	// how half the fleet and all of upstream spell the nested keys.
+	timestampKeyRe = regexp.MustCompile(`(?m)(?:^\s*(?:-\s+)?|[{,]\s*)(at|stale_after|last_modified|from|to):\s*([^,}\n]+)`)
+	offsetlessAt   = []string{"2006-01-02", "2006-01-02 15:04:05", "2006-01-02T15:04:05"}
+)
+
+// TimestampsCarryAnOffset refuses a date where §5 wants an instant. A value
+// that parses as neither is left alone: `from:` and `to:` are ordinary words,
+// and a rule that fired on prose would cost more than the drift it catches.
+func TimestampsCarryAnOffset(d okf.Doc) []okf.Finding {
+	var out []okf.Finding
+	for _, m := range timestampKeyRe.FindAllStringSubmatch(d.FMText, -1) {
+		v := strings.Trim(strings.TrimSpace(m[2]), `"'`)
+		if !offsetless(v) {
+			continue
+		}
+		out = append(out, okf.Finding{Sev: okf.Error, Msg: fmt.Sprintf(
+			"%s: %q names a different instant in every timezone — §5 wants an explicit UTC offset, e.g. %sT00:00:00Z", m[1], v, v[:10])})
+	}
+	return out
+}
+
+func offsetless(v string) bool {
+	for _, layout := range offsetlessAt {
+		if _, err := time.Parse(layout, v); err == nil {
+			return true
+		}
+	}
+	return false
 }

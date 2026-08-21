@@ -66,6 +66,11 @@ func Standard() okf.Rules {
 // the five verbs have no word for, and rewriting dated history falsifies it.
 func Strict() okf.Rules {
 	r := Standard()
+	// Waiting here for one tag while the fleet converts: 30 findings across four
+	// repos, because the rule covers six keys and not just stale_after. Upstream
+	// only required the offset on 2026-08-20 and every bundle predates it.
+	// Promote at zero, as the four spec rules were.
+	r.Doc = append(r.Doc, TimestampsCarryAnOffset)
 	r.Bundle = append(r.Bundle, LogVerbs(DefaultLogVerbs))
 	return r
 }

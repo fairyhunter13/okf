@@ -362,6 +362,25 @@ func TestSourceHasAResource(t *testing.T) {
 		"sources[0] is not a mapping", "sources[0] has no `resource:`")
 }
 
+func TestTimestampsCarryAnOffset(t *testing.T) {
+	repo := write(t, map[string]string{
+		"knowledge/index.md": "---\nokf_version: \"0.2\"\n---\n\n* [a](decisions/a.md)\n* [b](decisions/b.md)\n* [c](decisions/c.md)\n* [d](decisions/d.md)\n",
+		// Every timestamp-valued key, spelled the way §5 asks.
+		"knowledge/decisions/a.md": "---\ntype: Decision\ngenerated: {by: x/1, at: 2026-08-20T00:00:00Z}\nverified:\n  - {by: \"human:h\", at: 2026-08-20T09:00:00+07:00}\nstale_after: 2026-12-31T00:00:00Z\nusage_window: {from: 2026-06-01T00:00:00Z, to: 2026-08-01T00:00:00Z}\n---\n\nbody\n",
+		// The pre-2026-08-20 spelling, on the two keys that carried it in the fleet.
+		"knowledge/decisions/b.md": "---\ntype: Decision\ngenerated: {by: x/1, at: 2026-08-20}\nstale_after: 2026-12-31\n---\n\nbody\n",
+		// `from:` and `to:` are ordinary words. A rule that fired on these would
+		// cost more than the drift it catches.
+		"knowledge/decisions/c.md": "---\ntype: Decision\nroute: {from: warehouse, to: store}\n---\n\nbody\n",
+		// Quoting does not make a date an instant, and neither does a space.
+		"knowledge/decisions/d.md": "---\ntype: Decision\nstale_after: \"2026-12-31\"\nusage_window: {from: 2026-06-01 00:00:00, to: 2026-08-01T00:00:00Z}\n---\n\nbody\n",
+	})
+
+	want(t, check(t, repo, onlyDoc(TimestampsCarryAnOffset)),
+		"at: \"2026-08-20\"", "stale_after: \"2026-12-31\"",
+		"stale_after: \"2026-12-31\"", "from: \"2026-06-01 00:00:00\"")
+}
+
 func TestAttestedComputationHasContract(t *testing.T) {
 	repo := write(t, map[string]string{
 		"knowledge/index.md":          "---\nokf_version: \"0.2\"\n---\n\n* [a](computations/a.md)\n* [b](computations/b.md)\n* [c](computations/c.md)\n* [d](computations/d.md)\n",

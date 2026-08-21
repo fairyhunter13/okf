@@ -46,7 +46,7 @@ func CheckBundleWith(root string, today time.Time, rules Rules) ([]Finding, erro
 		if perr != nil {
 			return nil
 		}
-		bundle.Docs = append(bundle.Docs, Doc{Root: root, Rel: rel, FM: fm, Body: body})
+		bundle.Docs = append(bundle.Docs, Doc{Root: root, Rel: rel, FM: fm, Body: body, FMText: frontmatterText(string(b))})
 		if !Reserved(rel) {
 			concepts = append(concepts, rel)
 		}
@@ -60,6 +60,31 @@ func CheckBundleWith(root string, today time.Time, rules Rules) ([]Finding, erro
 	}
 	out = append(out, orphanFindings(concepts, linked)...)
 	return append(out, bundleFindings(rules.Bundle, bundle)...), nil
+}
+
+// Load parses every .md under a root and reports nothing. A consumer that
+// renders or indexes a bundle wants the documents without an opinion attached;
+// a document whose frontmatter will not parse is skipped, because [CheckBundle]
+// is where that is a finding.
+func Load(root string) (Bundle, error) {
+	b := Bundle{Root: root}
+	err := filepath.WalkDir(root, func(p string, d fs.DirEntry, err error) error {
+		if err != nil || d.IsDir() || filepath.Ext(p) != ".md" {
+			return err
+		}
+		raw, err := os.ReadFile(p)
+		if err != nil {
+			return err
+		}
+		fm, body, perr := Parse(string(raw))
+		if perr != nil {
+			return nil
+		}
+		rel := filepath.ToSlash(mustRel(root, p))
+		b.Docs = append(b.Docs, Doc{Root: root, Rel: rel, FM: fm, Body: body, FMText: frontmatterText(string(raw))})
+		return nil
+	})
+	return b, err
 }
 
 // Reserved reports whether a bundle-relative path is one of OKF's two reserved
@@ -105,7 +130,7 @@ func checkFile(root, rel, text string, today time.Time, rules []Rule) []Finding 
 			out = append(out, add(Error, "frontmatter has no non-empty `type`"))
 		}
 		out = append(out, staleFinding(add, fm, today)...)
-		out = append(out, ruleFindings(rules, Doc{Root: root, Rel: rel, FM: fm, Body: body})...)
+		out = append(out, ruleFindings(rules, Doc{Root: root, Rel: rel, FM: fm, Body: body, FMText: frontmatterText(text)})...)
 	}
 
 	return append(out, linkFindings(add, root, rel, body)...)
@@ -129,16 +154,15 @@ func staleFinding(add func(Severity, string, ...any) Finding, fm map[string]any,
 	if !ok {
 		return nil
 	}
-	s := fmt.Sprintf("%v", raw)
-	if len(s) > 10 {
-		s = s[:10]
-	}
-	d, err := time.Parse("2006-01-02", s)
+	// Compare instants, not days: truncating to YYYY-MM-DD first read
+	// 2026-12-31T23:00:00+07:00 as UTC midnight, a 17-hour error at the only
+	// boundary this key has.
+	d, err := ParseTimestamp(raw)
 	if err != nil {
-		return []Finding{add(Warning, "stale_after %q is not a YYYY-MM-DD date", s)}
+		return []Finding{add(Warning, "stale_after is not an ISO 8601 timestamp: %v", raw)}
 	}
 	if !today.Before(d) {
-		return []Finding{add(Warning, "stale since %s: re-verify or update stale_after", s)}
+		return []Finding{add(Warning, "stale since %s: re-verify or update stale_after", d.Format(time.RFC3339))}
 	}
 	return nil
 }
