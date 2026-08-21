@@ -125,7 +125,7 @@ default — and it writes it only on evidence it just checked:
 | `verifier.command` | the repo's own test for the claim exits 0, and only under `-run-verifiers` |
 
 A concept with nothing outward to check is **not stampable** and stays
-unverified: 33 of 295 fleet concepts earn a stamp, and rubber-stamping the other
+unverified: 34 of 296 fleet concepts earn a stamp, and rubber-stamping the other
 262 would cost the key its meaning. A `resource` that is a scope descriptor
 (§5.1 allows one a consumer cannot follow) earns no credit and is not a failure.
 
@@ -143,6 +143,13 @@ never matched twice and reported drift forever. So a digest is recorded, and a
 mismatch called drift, only after a second fetch agrees with the first. A source
 that fails that test proves reachability and nothing more, which is all it had
 ever proved.
+
+A passing run never advances `stale_after`: §5.5 makes staleness a plain date
+and §5.2 makes re-verification independent of it, so a check that moved the date
+would be silencing the calendar rather than answering it. Instead `verify`
+counts down — inside 30 days it prints `warning: stale in N day(s)` and leaves
+the exit code alone, so a bundle whose CI promotes that warning learns about the
+cliff a month before it falls off.
 
 `Stamp` refuses `-by human:*` when `CLAUDECODE` is set. A human sign-off is the
 one tier no run can earn, so it is the one an agent must not write, and that is

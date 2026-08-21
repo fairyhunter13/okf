@@ -140,6 +140,32 @@ func checkNotYetWritten(v *Verdict, fm map[string]any, now time.Time) {
 	}
 }
 
+// warnStaleAhead names the cliff before a bundle falls off it. §5.5 makes
+// staleness a plain date comparison, which says nothing until the day it says
+// red; a passing run must not move the date, so the only honest thing left is
+// to count down to it.
+func warnStaleAhead(v *Verdict, fm map[string]any, now time.Time) {
+	raw, ok := fm["stale_after"]
+	if !ok {
+		return
+	}
+	// yaml.v3 resolves a bare YYYY-MM-DD to time.Time and a quoted one to a string.
+	s := fmt.Sprintf("%v", raw)
+	if len(s) > 10 {
+		s = s[:10]
+	}
+	on, err := time.Parse("2006-01-02", s)
+	if err != nil {
+		return
+	}
+	if days := int(on.Sub(now).Hours() / 24); days >= 0 && days <= staleWarnDays {
+		v.Warn = append(v.Warn, fmt.Sprintf("stale in %d day(s), on %s", days, s))
+	}
+}
+
+// Far enough out that a fix is scheduling rather than an interrupt.
+const staleWarnDays = 30
+
 func short(digest string) string {
 	if i := strings.IndexByte(digest, ':'); i >= 0 && len(digest) > i+13 {
 		return digest[i+1 : i+13]

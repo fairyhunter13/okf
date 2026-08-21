@@ -47,6 +47,9 @@ func Main(args []string, w io.Writer, set okf.Rules) int {
 func report(w io.Writer, root string, verdicts []Verdict, opts Options, write bool) int {
 	var stampable, passed, blocked int
 	for _, v := range verdicts {
+		for _, warning := range v.Warn {
+			fmt.Fprintf(w, "%s/%s: warning: %s\n", root, v.Rel, warning)
+		}
 		if !v.Stampable {
 			continue
 		}

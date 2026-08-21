@@ -65,6 +65,24 @@ func TestAConceptDatedInTheFutureIsNotStamped(t *testing.T) {
 	}
 }
 
+// §5.5 staleness is a date comparison that says nothing until the day it says
+// red. A passing run must not move the date, so the countdown is what is left.
+func TestStaleAfterIsCountedDownBeforeItBites(t *testing.T) {
+	for _, tc := range []struct {
+		date string
+		want bool
+	}{
+		{"2026-09-10", true},  // 20 days out
+		{"2026-12-01", false}, // past the window
+		{"2026-08-01", false}, // already stale; check.go says so
+	} {
+		v := verdictFor(t, "stale_after: "+tc.date+"\n", Options{})
+		if got := len(v.Warn) > 0; got != tc.want {
+			t.Fatalf("%s: warned=%v want %v (%v)", tc.date, got, tc.want, v.Warn)
+		}
+	}
+}
+
 func TestDriftBlocksTheStamp(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/markdown")

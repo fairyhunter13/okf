@@ -36,6 +36,7 @@ type Verdict struct {
 	Stampable bool
 	Proven    []string
 	Blocked   []string
+	Warn      []string
 	Digests   map[string]string
 }
 
@@ -80,6 +81,7 @@ func Verify(root string, opts Options) ([]Verdict, error) {
 		}
 		checkVerifier(&v, fm, repo, opts)
 		checkNotYetWritten(&v, fm, opts.Now)
+		warnStaleAhead(&v, fm, opts.Now)
 		if n := blockers[rel]; n > 0 {
 			v.Blocked = append(v.Blocked, fmt.Sprintf("%d conformance error(s)", n))
 		}
