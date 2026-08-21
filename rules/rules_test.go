@@ -89,6 +89,23 @@ func TestResourceResolves(t *testing.T) {
 	})
 
 	want(t, check(t, repo, onlyDoc(ResourceResolves)), "resource does not exist: scripts/gone.py")
+
+	// Same bundle, root spelled with a trailing slash. Before okf cleaned the root
+	// this reported every repo-relative resource as missing -- 12 of them on one real
+	// bundle -- so a gate's path spelling decided whether it was red.
+	findings, err := okf.CheckBundleWith(filepath.Join(repo, "knowledge")+string(filepath.Separator), refDate, onlyDoc(ResourceResolves))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var errs []string
+	for _, f := range findings {
+		if f.Sev == okf.Error {
+			errs = append(errs, f.String())
+		}
+	}
+	if len(errs) != 1 || !strings.Contains(errs[0], "scripts/gone.py") {
+		t.Errorf("trailing-slash root reported %v, want only scripts/gone.py", errs)
+	}
 }
 
 func TestTypeVocabulary(t *testing.T) {

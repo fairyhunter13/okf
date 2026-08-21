@@ -27,6 +27,11 @@ func CheckBundle(root string, today time.Time, rules ...Rule) ([]Finding, error)
 // findings are appended after the per-concept ones and sorted among themselves,
 // so adding one cannot move a line the stock check already prints.
 func CheckBundleWith(root string, today time.Time, rules Rules) ([]Finding, error) {
+	// A caller that spells the root with a trailing slash gets the same verdict as
+	// one that does not: uncleaned, filepath.Dir(Root) is the bundle itself, so
+	// every repo-relative `resource:` stops resolving and the bundle reports errors
+	// for files that are there.
+	root = filepath.Clean(root)
 	var out []Finding
 	var concepts []string
 	bundle := Bundle{Root: root}
@@ -67,6 +72,7 @@ func CheckBundleWith(root string, today time.Time, rules Rules) ([]Finding, erro
 // a document whose frontmatter will not parse is skipped, because [CheckBundle]
 // is where that is a finding.
 func Load(root string) (Bundle, error) {
+	root = filepath.Clean(root)
 	b := Bundle{Root: root}
 	err := filepath.WalkDir(root, func(p string, d fs.DirEntry, err error) error {
 		if err != nil || d.IsDir() || filepath.Ext(p) != ".md" {
