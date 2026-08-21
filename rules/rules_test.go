@@ -432,3 +432,20 @@ func TestAttestedComputationHasContract(t *testing.T) {
 		"needs exactly one of",
 		"needs exactly one of")
 }
+
+// okf.CheckBundle is the conformance tier and passes all four of the spec
+// authors' bundles; Standard() is this fleet's house style and does not. That is
+// deliberate for the rules that are ours, and was a plain bug for this one:
+// §4.1's own example type values were outside the vocabulary, so the checker red
+// the reference bundles over the spec's own text.
+func TestTypeVocabularyAdmitsTheSpecsOwnExamples(t *testing.T) {
+	for _, ty := range []string{"BigQuery Table", "BigQuery Dataset", "API Endpoint", "Metric", "Playbook", "Reference"} {
+		repo := write(t, map[string]string{
+			"knowledge/index.md":       "---\nokf_version: \"0.2\"\n---\n\n* [a](decisions/a.md)\n",
+			"knowledge/decisions/a.md": "---\ntype: " + ty + "\n---\n\nbody\n",
+		})
+		if errs := check(t, repo, onlyDoc(TypeVocabulary(DefaultTypes))); len(errs) > 0 {
+			t.Errorf("type %q: %q", ty, errs)
+		}
+	}
+}

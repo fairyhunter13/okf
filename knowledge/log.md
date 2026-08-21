@@ -7,6 +7,14 @@ title: okf knowledge history
 
 ## 2026-08-21
 
+- **Creation**: `standard-is-a-house-tier-not-a-conformance-check.md`, plus the type vocabulary
+  admits §4.1's own example values. A fleet audit ran `Standard()` over the four reference bundles
+  and all four were red — two of them *only* over `BigQuery Table` and `BigQuery Dataset`, which
+  §4.1 prints as examples in a vocabulary it says is not registered. That one is a bug and is
+  fixed; the reds on `acme_retail` are house rules and stay; `stackoverflow`'s 11 are §5.1's keyed
+  footnotes, so the reference bundle is off its own spec. `CheckBundle` passed all four throughout,
+  which is the distinction the concept records.
+
 - **Update**: the repo base is derived from `filepath.Abs(d.Root)`, not from the string the caller
   typed. Cleaning the root closed the trailing slash and nothing else: `Dir(".")` is `"."`, so
   `okfrules check .` from inside a bundle still collapsed the repo and bundle bases -- 131 errors

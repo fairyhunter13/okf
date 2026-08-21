@@ -22,6 +22,11 @@ var (
 		// §6.3's `references/`: external material mirrored as a concept, so a
 		// bundle can cite a schema or an upstream doc by name instead of by URL.
 		"Reference",
+		// §4.1's own example values. The spec does not register types centrally
+		// and §11 says a consumer MUST NOT reject a bundle over an unknown one;
+		// this rule breaks that to catch `Constraints` for `Constraint`, so at
+		// minimum it must not red the four bundles the spec authors ship.
+		"BigQuery Table", "BigQuery Dataset", "API Endpoint", "Metric", "Playbook",
 	}
 	DefaultLogVerbs = []string{"Creation", "Update", "Deprecation", "Remove", "Verified"}
 )
