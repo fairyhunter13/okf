@@ -23,3 +23,7 @@ jobs:
       - run: go vet ./...
 
       - run: go test ./...
+
+      # The checker under test, not a pinned install: a bundle these rules refuse
+      # must fail this commit, and a tag would gate it with an older reading.
+      - run: go run ./cmd/okfrules -strict check -Werror ./knowledge

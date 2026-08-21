@@ -241,3 +241,10 @@ load-bearing comment at the site it constrains — the severity split, the §11
 refusals, the parse rules — and a bundle would give each of them two edit sites,
 one of which would go stale first. `okf-bootstrap`'s own test is whether the
 reasons are recoverable from the code; in ~400 lines describing a spec, they are.
+
+## Knowledge bundle
+
+`knowledge/` is an OKF v0.2 bundle. Read the concepts that touch the task before starting; write
+them back in the same commit as the code. The `okf-knowledge-bundle` skill owns how.
+Gate: `go run ./cmd/okfrules -strict check -Werror ./knowledge` in CI — this repo builds the
+checker, so it runs the version under test rather than a pinned install.
