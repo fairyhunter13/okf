@@ -4,7 +4,7 @@ A checker for [OKF v0.2](https://github.com/GoogleCloudPlatform/knowledge-catalo
 bundles — directories of markdown with YAML frontmatter.
 
 ```
-go install github.com/fairyhunter13/okf/cmd/okf@v0.5.0
+go install github.com/fairyhunter13/okf/cmd/okf@v0.5.1
 okf check knowledge          # conformance errors exit 1
 okf check -Werror knowledge  # warnings exit 1 too
 ```
@@ -66,7 +66,7 @@ themselves, so adding one never moves a line the stock check already prints —
 ## The fleet rules
 
 ```
-go install github.com/fairyhunter13/okf/cmd/okfrules@v0.5.0
+go install github.com/fairyhunter13/okf/cmd/okfrules@v0.5.1
 okfrules check -Werror knowledge
 okfrules -strict check -Werror knowledge
 ```
