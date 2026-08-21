@@ -1,6 +1,6 @@
 ---
 type: Defect
-resource: check.go
+resource: check.go, rules/doc_rules.go
 title: A trailing slash on the bundle root invented missing resources
 description: anyExists reads filepath.Dir(Root) as the repo root, so a root spelled knowledge/ resolved every repo-relative resource against the bundle itself — 12 conformance errors on one real bundle with the slash and 0 without.
 tags: [okf, paths, rules, gates]
@@ -30,8 +30,17 @@ of the code path was total and coverage of the *input* was zero.
 It also fails in the safe-looking direction. A checker that under-reports gets found; one that
 over-reports on a path spelling gets read as a bad bundle, and the reader edits the bundle.
 
+# The clean was half a fix
+
+Found the same day, by running `okfrules check .` from inside a bundle: 131 errors against 13.
+`filepath.Clean(".")` is `"."` and `filepath.Dir(".")` is `"."`, so cleaning the root cannot reach
+this spelling — the collapse is not about the slash, it is about `Dir` being asked for a parent the
+string does not carry. The first fix was written against the one spelling that had been observed,
+which is how a defect gets closed at the symptom.
+
 # What covers it now
 
-`CheckBundleWith` and `Load` clean the root once, at the top. The test builds the same fixture twice
-and requires the two spellings to produce the same finding; without the clean it reports the three
-resources that exist, with it only the one that does not.
+`CheckBundleWith` and `Load` still clean the root, and `anyExists` derives the repo base from
+`filepath.Abs(d.Root)` rather than from the string it was handed, which is correct for every
+spelling including the two that were red. The test builds one fixture and checks it through all
+three spellings; with the abs removed, the `.` arm reports the three resources that exist.

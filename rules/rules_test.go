@@ -106,6 +106,23 @@ func TestResourceResolves(t *testing.T) {
 	if len(errs) != 1 || !strings.Contains(errs[0], "scripts/gone.py") {
 		t.Errorf("trailing-slash root reported %v, want only scripts/gone.py", errs)
 	}
+
+	// Same bundle again, spelled `.` from inside it. Cleaning the root does not
+	// reach this one -- Dir(".") is "." -- so the repo base is recovered by abs.
+	t.Chdir(filepath.Join(repo, "knowledge"))
+	findings, err = okf.CheckBundleWith(".", refDate, onlyDoc(ResourceResolves))
+	if err != nil {
+		t.Fatal(err)
+	}
+	errs = nil
+	for _, f := range findings {
+		if f.Sev == okf.Error {
+			errs = append(errs, f.String())
+		}
+	}
+	if len(errs) != 1 || !strings.Contains(errs[0], "scripts/gone.py") {
+		t.Errorf("dot root reported %v, want only scripts/gone.py", errs)
+	}
 }
 
 func TestTypeVocabulary(t *testing.T) {

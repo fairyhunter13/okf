@@ -59,7 +59,15 @@ func resourceRefs(raw any) []string {
 // bundle, or the concept — and all three readings are in use, so all three
 // count. The rule is about existence, not about spelling.
 func anyExists(d okf.Doc, ref string) bool {
-	for _, base := range []string{filepath.Dir(d.Root), d.Root, filepath.Dir(filepath.Join(d.Root, filepath.FromSlash(d.Rel)))} {
+	// The repo base is Dir of the root, which is the repo only when the root is
+	// spelled with a parent. `check .` from inside the bundle makes Dir the bundle
+	// itself and every repo-relative resource stops resolving; abs recovers the
+	// parent for any spelling, including the one Clean cannot reach.
+	repo := filepath.Dir(d.Root)
+	if abs, err := filepath.Abs(d.Root); err == nil {
+		repo = filepath.Dir(abs)
+	}
+	for _, base := range []string{repo, d.Root, filepath.Dir(filepath.Join(d.Root, filepath.FromSlash(d.Rel)))} {
 		if _, err := os.Stat(filepath.Join(base, filepath.FromSlash(ref))); err == nil {
 			return true
 		}
