@@ -51,6 +51,19 @@ func TestScopeDescriptorEarnsNoStamp(t *testing.T) {
 	}
 }
 
+// VerifiedWellFormed rejects a stamp older than what it confirms, so writing one
+// would put the bundle in a state its own checker fails.
+func TestAConceptDatedInTheFutureIsNotStamped(t *testing.T) {
+	fm := "generated: {by: claude/opus-5, at: 2026-08-21T08:00:00Z}\nverifier:\n  command: \"true\"\n"
+	v := verdictFor(t, fm, Options{RunVerifiers: true})
+	if v.Passed() {
+		t.Fatal("stamped a concept written after the stamp")
+	}
+	if !strings.Contains(strings.Join(v.Blocked, " "), "generated.at is in the future") {
+		t.Fatalf("not named: %v", v.Blocked)
+	}
+}
+
 func TestDriftBlocksTheStamp(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/markdown")

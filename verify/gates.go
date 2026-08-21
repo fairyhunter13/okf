@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os/exec"
 	"strings"
+	"time"
 )
 
 // checkSource is gate 2. It dispatches on the shape of §5.1's `resource`
@@ -98,6 +99,32 @@ func checkVerifier(v *Verdict, fm map[string]any, repo string, opts Options) {
 		return
 	}
 	v.Proven = append(v.Proven, "verifier passed: "+cmdline)
+}
+
+// checkNotYetWritten refuses to write a stamp its own rules would reject. A
+// `generated.at` rounded up to the next hour puts the concept in the future, and
+// a stamp cannot confirm what has not been written yet.
+func checkNotYetWritten(v *Verdict, fm map[string]any, now time.Time) {
+	if !v.Stampable {
+		return
+	}
+	gen, ok := fm["generated"].(map[string]any)
+	if !ok {
+		return
+	}
+	// yaml.v3 decodes an unquoted timestamp into time.Time, a quoted one into a
+	// string, and the fleet writes both.
+	at := fmt.Sprintf("%v", gen["at"])
+	written, ok := gen["at"].(time.Time)
+	if !ok {
+		var err error
+		if written, err = time.Parse(time.RFC3339, at); err != nil {
+			return
+		}
+	}
+	if now.Before(written) {
+		v.Blocked = append(v.Blocked, "generated.at is in the future: "+at)
+	}
 }
 
 func short(digest string) string {

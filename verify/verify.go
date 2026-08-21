@@ -79,6 +79,7 @@ func Verify(root string, opts Options) ([]Verdict, error) {
 			checkSource(&v, src, repo, root, opts)
 		}
 		checkVerifier(&v, fm, repo, opts)
+		checkNotYetWritten(&v, fm, opts.Now)
 		if n := blockers[rel]; n > 0 {
 			v.Blocked = append(v.Blocked, fmt.Sprintf("%d conformance error(s)", n))
 		}
