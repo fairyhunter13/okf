@@ -61,14 +61,27 @@ func checkURL(v *Verdict, src map[string]any, res string, opts Options) {
 	}
 	was, _ := src["digest"].(string)
 	switch {
+	case was == sum && was != "":
+		v.Proven = append(v.Proven, "unchanged: "+res)
+	case !stable(opts, res, sum):
+		// An issue tracker or a directory listing rewrites its HTML per request, so its
+		// digest never matches twice and reports drift forever. Reachability is all such
+		// a source can prove, and claiming more of it was the false half of the check.
+		v.Proven = append(v.Proven, "reachable, digest unstable: "+res)
 	case was == "":
 		v.Digests[res] = sum
 		v.Proven = append(v.Proven, "digest recorded: "+res)
-	case was != sum:
-		v.Blocked = append(v.Blocked, fmt.Sprintf("source drifted: %s (%s -> %s)", res, short(was), short(sum)))
 	default:
-		v.Proven = append(v.Proven, "unchanged: "+res)
+		v.Blocked = append(v.Blocked, fmt.Sprintf("source drifted: %s (%s -> %s)", res, short(was), short(sum)))
 	}
+}
+
+// stable re-fetches once and reports whether the two answers agree. It runs only
+// where the answer changes what is written -- recording a new digest, or calling a
+// mismatch drift -- so a source that matches its record costs one request as before.
+func stable(opts Options, res, sum string) bool {
+	again, err := FetchURL(opts.Client, res)
+	return err == nil && again == sum
 }
 
 // checkVerifier is gate 3. A command named in a data file runs only when the

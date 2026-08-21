@@ -4,7 +4,7 @@ A checker for [OKF v0.2](https://github.com/GoogleCloudPlatform/knowledge-catalo
 bundles — directories of markdown with YAML frontmatter.
 
 ```
-go install github.com/fairyhunter13/okf/cmd/okf@v0.5.1
+go install github.com/fairyhunter13/okf/cmd/okf@v0.5.2
 okf check knowledge          # conformance errors exit 1
 okf check -Werror knowledge  # warnings exit 1 too
 ```
@@ -66,7 +66,7 @@ themselves, so adding one never moves a line the stock check already prints —
 ## The fleet rules
 
 ```
-go install github.com/fairyhunter13/okf/cmd/okfrules@v0.5.1
+go install github.com/fairyhunter13/okf/cmd/okfrules@v0.5.2
 okfrules check -Werror knowledge
 okfrules -strict check -Werror knowledge
 ```
@@ -136,6 +136,13 @@ not on the upstream page. GitHub `blob` URLs are hashed through
 `raw.githubusercontent.com`, and an extensionless docs path is tried as `.md`
 first: the HTML those hosts serve is an app shell whose hash moves on every site
 deploy.
+
+Normalization does not reach every host. An issue tracker or a directory listing
+rewrites its HTML per request, and four of the fleet's sources do: their digests
+never matched twice and reported drift forever. So a digest is recorded, and a
+mismatch called drift, only after a second fetch agrees with the first. A source
+that fails that test proves reachability and nothing more, which is all it had
+ever proved.
 
 `Stamp` refuses `-by human:*` when `CLAUDECODE` is set. A human sign-off is the
 one tier no run can earn, so it is the one an agent must not write, and that is

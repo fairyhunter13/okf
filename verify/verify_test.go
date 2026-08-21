@@ -1,6 +1,7 @@
 package verify
 
 import (
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -92,6 +93,27 @@ func TestFirstRunRecordsTheDigest(t *testing.T) {
 	v := verdictFor(t, fm, Options{Client: srv.Client()})
 	if !v.Passed() || len(v.Digests) != 1 {
 		t.Fatalf("passed=%v digests=%v blocked=%v", v.Passed(), v.Digests, v.Blocked)
+	}
+}
+
+// Three of the fleet's sources are issue trackers and directory listings whose
+// HTML differs on every request. Digesting those reported drift forever.
+func TestAPageThatDiffersOnEveryFetchRecordsNoDigest(t *testing.T) {
+	var n int
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		n++
+		w.Header().Set("Content-Type", "text/markdown")
+		fmt.Fprintf(w, "csrf token %d", n)
+	}))
+	defer srv.Close()
+
+	fm := "sources:\n  - id: s\n    resource: " + srv.URL + "/issue\n"
+	v := verdictFor(t, fm, Options{Client: srv.Client()})
+	if !v.Passed() {
+		t.Fatalf("a reachable source was blocked: %v", v.Blocked)
+	}
+	if len(v.Digests) != 0 {
+		t.Fatalf("recorded a digest that can never match again: %v", v.Digests)
 	}
 }
 
