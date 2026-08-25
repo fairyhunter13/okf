@@ -5,6 +5,15 @@ title: okf knowledge history
 
 # Bundle history
 
+## 2026-08-25
+
+- **Update** — rewrote the bundle and `README.md` in shorter sentences. The three rules the fleet
+  gate refuses on (5.1, 6.3 and 6.6) reach zero across the read-often files. Corpus
+  `39597edbb22b7162` before, `b6e4b2ffc63b4c60` after, dictionary
+  `49c777026741bf0473a201bf194c08bed3d6a6d92d85d3a0c0e50bb2500ba7ed`, `terms_skipped` false. The 6
+  findings left in the repo sit outside that set, in `SPEC.md` and the reference bundles. No claim
+  of ASD-STE100 conformance is made, because the approved dictionary is not redistributable.
+
 ## 2026-08-21
 
 - **Creation**: `standard-is-a-house-tier-not-a-conformance-check.md`, plus the type vocabulary

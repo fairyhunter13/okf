@@ -2,7 +2,7 @@
 type: Constraint
 resource: testdata/google
 title: Upstream changes the spec without bumping its version, so the vendored sha is the only baseline
-description: §5 grew an explicit-offset requirement on 2026-08-20 with the version left at 0.2 and no tags in the repo, and we found it a day late by cloning — so testdata/google records the commit it was vendored at.
+description: "§5 grew an explicit-offset requirement on 2026-08-20 with the version left at 0.2 and no tags in the repo. We found it a day late by cloning — so testdata/google records the commit it was vendored at."
 tags: [okf, spec, upstream, vendoring]
 status: stable
 generated: { by: claude/opus-5, at: 2026-08-21T14:30:00Z }
@@ -16,10 +16,10 @@ sources:
 # Constraint
 
 `okf_version` is `"0.2"` and has been through at least one substantive change to what a conformant
-document looks like. Upstream ships no tags. So the version key answers nothing about which reading
-of the spec a bundle was written against, and the only baseline a refresh can diff is the commit sha
-the reference bundles were copied at — recorded in `testdata/google/README.md` and updated whenever
-they are re-copied.
+document looks like. Upstream ships no tags. So the version key answers nothing about which
+reading of the spec a bundle was written against. The only baseline a refresh can diff is the
+commit sha the reference bundles were copied at. Recorded in `testdata/google/README.md` and
+updated whenever they are re-copied.
 
 The reference bundles pin conformance to something outside our own reading: whatever `okf check`
 rejects there is a bug in the checker, not in the bundle. That only holds while the vendored copy is
@@ -32,6 +32,6 @@ same commit. So it is a producer rule: a conformant consumer may not reject a bu
 distinction decides which tier a rule can ever reach, not merely which one it starts in — see
 [a rule waits in Strict](../decisions/a-rule-waits-in-strict-until-the-fleet-measures-zero.md).
 
-Finding it a day late by cloning is the more serious half. Nothing polls upstream; the fleet's
-bundles now cite `SPEC.md` as a source with a digest, so the nightly drift run reports the next
+Finding it a day late by cloning is the more serious half. Nothing polls upstream. The fleet's
+bundles now cite `SPEC.md` as a source with a digest. So the nightly drift run reports the next
 change on the day it lands.

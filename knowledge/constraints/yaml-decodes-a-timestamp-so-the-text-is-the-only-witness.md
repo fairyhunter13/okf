@@ -2,7 +2,7 @@
 type: Constraint
 resource: rules/doc_rules.go
 title: yaml.v3 decodes a timestamp before a rule can read it, so the frontmatter text is the only witness to how it was spelled
-description: An unquoted timestamp decodes to time.Time and a quoted one to a string, and 2026-12-31 and 2026-12-31T00:00:00Z decode to the same instant — so a rule about spelling has to read Doc.FMText, and one that read only FM was wrong twice.
+description: "An unquoted timestamp decodes to time.Time and a quoted one to a string. 2026-12-31 and 2026-12-31T00:00:00Z decode to the same instant — so a rule about spelling has to read Doc.FMText. One that read only FM was wrong twice."
 tags: [okf, yaml, timestamps, rules]
 status: stable
 generated: { by: claude/opus-5, at: 2026-08-21T14:30:00Z }
@@ -24,7 +24,7 @@ written, and two of this checker's rules are exactly that question:
 
 # It has cost two rules already
 
-`staleFinding` truncated to ten characters and parsed a date, so `2026-12-31T23:00:00+07:00` read as
-UTC midnight on the 31st — a 17-hour error at the only boundary the key has. It compares instants
+`staleFinding` truncated to ten characters and parsed a date, so `2026-12-31T23:00:00+07:00` read
+as UTC midnight on the 31st. A 17-hour error at the only boundary the key has. It compares instants
 now. Both defects arrived with
 [upstream tightening §5 without a version bump](upstream-changes-the-spec-without-bumping-it.md).

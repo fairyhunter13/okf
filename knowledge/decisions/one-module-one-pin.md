@@ -2,7 +2,7 @@
 type: Decision
 resource: rules
 title: okfrules is a package, not a module, because §11 separation needs an import boundary and not a version
-description: A separate module bought spec separation at the price of two pins that never moved apart and a sweep that could grade only §11; a package buys the same separation, because Go imports packages.
+description: A separate module bought spec separation. The price was two pins that never moved apart, and a sweep that could grade only §11. A package buys the same separation, because Go imports packages.
 tags: [okf, modules, spec, sweep]
 status: stable
 generated: { by: claude/opus-5, at: 2026-08-21T14:30:00Z }
@@ -11,8 +11,8 @@ generated: { by: claude/opus-5, at: 2026-08-21T14:30:00Z }
 # Decision
 
 `okf` is the spec's reading of itself: §11's three failing rules and nothing more. `okf/rules`
-holds what this fleet decided on top. That separation is a promise to a consumer — importing `okf`
-gets a conformant checker with no fleet opinions attached — and for three tags it was enforced by
+holds what this fleet decided on top. That separation is a promise to a consumer: importing `okf`
+gets a conformant checker with no fleet opinions attached. For three tags it was enforced by
 making `okfrules` a second Go module.
 
 Two prices. The sweep imports both, so as a module it could reach only `okf`, and a cross-repo
@@ -30,8 +30,8 @@ errors both times. A merge that silently promotes rules is a fleet-wide gate cha
 refactoring.
 
 `okfrules`' own history was imported rather than left behind. proxy.golang.org holds its v0.1.0
-through v0.2.1 immutably, so old pins keep resolving after the repo goes; the commits were the only
-thing deletion would have taken.
+through v0.2.1 immutably, so old pins keep resolving after the repo goes. The commits were the
+only thing deletion would have taken.
 
 The tier a rule sits in is a separate decision — see
 [a rule waits in Strict until the fleet measures zero](a-rule-waits-in-strict-until-the-fleet-measures-zero.md).
