@@ -7,6 +7,11 @@ title: okf knowledge history
 
 ## 2026-09-01
 
+- **Update** — `v0.6.1`. No rule changed tier and no rule changed behaviour, so this tag exists to
+  make the corrected records the pinned ones: a consumer installing `@v0.6.0` gets a `README.md`
+  that denies this bundle exists and a decision record contradicting the `rules/rules.go` it names
+  as its `resource`. The fleet's pin moves for a documentation fix, which is the first time.
+
 - **Update** — five claims corrected, all of them numbers or names written in prose that no rule
   reads. `README.md` carried a `## Why this repo has no knowledge/` section directly above
   `## Knowledge bundle`, and this bundle has existed since `785d927`; the refused-on-purpose
