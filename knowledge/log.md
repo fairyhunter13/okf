@@ -5,6 +5,22 @@ title: okf knowledge history
 
 # Bundle history
 
+## 2026-09-01
+
+- **Update** — five claims corrected, all of them numbers or names written in prose that no rule
+  reads. `README.md` carried a `## Why this repo has no knowledge/` section directly above
+  `## Knowledge bundle`, and this bundle has existed since `785d927`; the refused-on-purpose
+  argument was overturned and the section is deleted rather than rewritten. `Standard()` was
+  described as everything but `LogVerbs`, where `Strict()` adds `TimestampsCarryAnOffset` too.
+  `a-rule-waits-in-strict-until-the-fleet-measures-zero.md` said the four spec rules promoted at
+  **v0.5.0** after firing on **146, 32, 27 and 4**; `1b201f9` and the comment in the file the
+  concept names as its `resource` both say **v0.4.1** and **172, 31, 27 and 3**. `SourceHasAResource`
+  sat inside that comment's span and never staged in `Strict()` — `ae02ac2` added it straight to
+  `Standard()` — so it moves above the comment that claims a history it does not have. And
+  `LogVerbs`' **57 + 26** sum to **83**, not the **84** measured; the 57 are renamed, so the sweep
+  cannot be run again to say which figure slipped, and the record now says so instead of implying
+  the split is exact.
+
 ## 2026-08-25
 
 - **Update** — rewrote the bundle and `README.md` in shorter sentences. The three rules the fleet

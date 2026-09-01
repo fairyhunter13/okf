@@ -42,13 +42,13 @@ func Standard() okf.Rules {
 			TypeVocabulary(DefaultTypes),
 			VerifiedWellFormed,
 			StaleAfterHasAReason,
+			SourceHasAResource,
 			// Standard since v0.4.1. At v0.4.0 these four fired on 172, 31, 27 and
 			// 3 fleet concepts and waited in Strict; the conversion finished and
 			// all ten bundles measure zero, which is the promotion condition.
 			ActorConvention,
 			StatusVocabulary,
 			FootnoteLabelsJoinSources,
-			SourceHasAResource,
 			AttestedComputationHasContract,
 		},
 		Bundle: []okf.BundleRule{
@@ -66,9 +66,11 @@ func Standard() okf.Rules {
 	}
 }
 
-// Strict adds the rules a bundle has to be converted into first. Of LogVerbs'
-// 84 offending entries, 57 were drift and were renamed; the 26 left are labels
-// the five verbs have no word for, and rewriting dated history falsifies it.
+// Strict adds the rules a bundle has to be converted into first. LogVerbs
+// measured 84 offending entries; the triage recorded 57 as drift, since
+// renamed, and 26 as labels the five verbs have no word for, which rewriting
+// dated history would falsify. Those two groups sum to 83 and one is
+// unaccounted for; the 57 are renamed, so the count cannot be taken again.
 func Strict() okf.Rules {
 	r := Standard()
 	// Waiting here for one tag while the fleet converts: 30 findings across four

@@ -13,7 +13,8 @@ generated: { by: claude/opus-5, at: 2026-08-21T14:30:00Z }
 A new fleet rule lands in `Strict()` and fires on whatever it fires on. It moves to `Standard()`
 at the next tag, once every bundle measures zero. `NoIntraBundleWikilinks` set the precedent at
 v0.2.1. Four spec rules — `ActorConvention`, `StatusVocabulary`, `FootnoteLabelsJoinSources`,
-`AttestedComputationHasContract` — followed at v0.5.0 after shipping at 146, 32, 27 and 4 firings.
+`AttestedComputationHasContract` — followed at v0.4.1 after shipping in v0.4.0 at 172, 31, 27 and
+3 firings.
 
 The condition is not politeness. `Strict()` is reached by the `-strict` flag and by a repo that
 calls `rules.Strict()` in its own `cmd/`. The pinned majority of the fleet never sees it. So a

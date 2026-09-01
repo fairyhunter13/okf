@@ -88,7 +88,7 @@ okfrules -strict check -Werror knowledge
 | `LogVerbs` | a log entry led by something outside the five verbs |
 | `TimestampsCarryAnOffset` | a date where §5 wants an instant — `2026-12-31` names a different moment in every timezone |
 
-`Standard()` is everything but `LogVerbs`, and all but `PreferRelativeLinks` are errors rather
+`Standard()` is everything but the last two, and all but `PreferRelativeLinks` are errors rather
 than the spec's advisory half. Each says a concept describes something that is not there, or is
 filed where nothing will find it.
 `PreferRelativeLinks` was an engine warning until v0.4.0; §6.1 only recommends a shape, so the
@@ -105,10 +105,11 @@ measurement. The timestamp rule is upstream's 2026-08-20 change to §5, which sh
 version bump. It fires on 30 fleet concepts across four repos and promotes at zero, like the four
 spec rules did.
 
-`LogVerbs` measured 84 offending entries on 2026-08-21 across the three bundles that fired: 57
-ordinary drift, since renamed, and 26 left in two bundles. 13 sentences and 13 labels the five
-verbs have no word for (`Refused`, `Refutation`, `Not changed`). Rewriting dated history to fit a closed
-vocabulary falsifies it.
+`LogVerbs` measured 84 offending entries on 2026-08-21 across the three bundles that fired. The
+triage recorded 57 as ordinary drift, since renamed, and 26 left in two bundles: 13 sentences and 13
+labels the five verbs have no word for (`Refused`, `Refutation`, `Not changed`). Rewriting dated
+history to fit a closed vocabulary falsifies it. The two groups sum to 83, one entry is unaccounted
+for, and the 57 are renamed — so the measurement cannot be taken again to say which figure slipped.
 
 ## Augment, never shrink
 
@@ -223,13 +224,6 @@ be no verdict.
 Sweep exits 0 on findings. It is a report, not a gate: a red not attached to a
 change is the accumulating advisory the severity split exists to avoid. Exit 1
 means the sweep itself did not run.
-
-## Why this repo has no `knowledge/`
-
-Swept and refused, not overlooked. Every non-obvious decision here is already a load-bearing
-comment at the site it constrains: the severity split, the §11 refusals, the parse rules. A bundle
-would give each of them two edit sites, and one of the two would go stale first. `okf-bootstrap`'s own test is whether the
-reasons are recoverable from the code; in ~400 lines describing a spec, they are.
 
 ## Knowledge bundle
 
